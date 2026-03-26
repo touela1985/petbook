@@ -1,0 +1,51 @@
+class AdoptionPet {
+  final String id;
+  final String name;
+  final String type;
+  final String age;
+  final String location;
+  final String description;
+  final String contactPhone;
+  final String? photoPath;
+  final bool adopted;
+
+  AdoptionPet({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.age,
+    required this.location,
+    required this.description,
+    required this.contactPhone,
+    this.photoPath,
+    this.adopted = false,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'type': type,
+      'age': age,
+      'location': location,
+      'description': description,
+      'contactPhone': contactPhone,
+      'photoPath': photoPath,
+      'adopted': adopted,
+    };
+  }
+
+  factory AdoptionPet.fromJson(Map<String, dynamic> json) {
+    return AdoptionPet(
+      id: json['id'],
+      name: json['name'],
+      type: json['type'],
+      age: json['age'],
+      location: json['location'],
+      description: json['description'],
+      contactPhone: json['contactPhone'],
+      photoPath: json['photoPath'],
+      adopted: json['adopted'] ?? false,
+    );
+  }
+}

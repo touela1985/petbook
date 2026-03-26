@@ -1,0 +1,51 @@
+{
+  "quickActions": "Quick Actions",
+  "reportLost": "Report",
+  "foundPet": "Found",
+  "community": "Community",
+  "joinShare": "Join",
+  "adoption": "Adoption",
+  "explore": "Explore",
+  "viewProfile": "Profile",
+  "alerts": "Alerts",
+
+  "messages": "Messages",
+  "sendMessage": "Send",
+  "noMessages": "No messages yet",
+  "messageSent": "Message sent",
+  "yourName": "Name",
+  "message": "Message",
+  "close": "Close",
+
+  "call": "Call",
+  "share": "Share",
+  "contact": "Contact",
+
+  "notes": "Notes",
+  "location": "Location",
+  "date": "Date",
+
+  "myPets": "My pets",
+  "addPet": "Add",
+  "noPets": "No pets yet",
+
+  "lostPets": "Lost",
+  "foundPets": "Found",
+  "noLostAlerts": "No lost alerts",
+  "noFoundAlerts": "No found alerts",
+
+  "nearby": "Nearby",
+  "noNearby": "No nearby alerts",
+  "goodNews": "Good news",
+  "lostNearby": "Lost pet nearby",
+
+  "save": "Save",
+  "edit": "Edit",
+  "delete": "Delete",
+  "add": "Add",
+  "open": "Open",
+  "petProfile": "Pet Profile",
+  "health": "Health",
+  "noHealthEvents": "No health events yet."
+
+}
