@@ -1,3 +1,37 @@
+class LostPetSighting {
+  final String id;
+  final String location;
+  final String notes;
+  final DateTime createdAt;
+
+  LostPetSighting({
+    required this.id,
+    required this.location,
+    required this.notes,
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'location': location,
+      'notes': notes,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+
+  factory LostPetSighting.fromJson(Map<String, dynamic> json) {
+    return LostPetSighting(
+      id: json['id'],
+      location: json['location'] ?? '',
+      notes: json['notes'] ?? '',
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+    );
+  }
+}
+
 class LostPetReport {
   final String id;
   final String petName;
@@ -11,6 +45,7 @@ class LostPetReport {
   final double? latitude;
   final double? longitude;
   final DateTime createdAt;
+  final List<LostPetSighting> sightings;
 
   LostPetReport({
     required this.id,
@@ -25,7 +60,9 @@ class LostPetReport {
     this.latitude,
     this.longitude,
     DateTime? createdAt,
-  }) : createdAt = createdAt ?? DateTime.now();
+    List<LostPetSighting>? sightings,
+  })  : createdAt = createdAt ?? DateTime.now(),
+        sightings = sightings ?? [];
 
   Map<String, dynamic> toJson() {
     return {
@@ -41,6 +78,7 @@ class LostPetReport {
       'latitude': latitude,
       'longitude': longitude,
       'createdAt': createdAt.toIso8601String(),
+      'sightings': sightings.map((s) => s.toJson()).toList(),
     };
   }
 
@@ -60,6 +98,10 @@ class LostPetReport {
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
+      sightings: (json['sightings'] as List<dynamic>?)
+              ?.map((item) => LostPetSighting.fromJson(item))
+              .toList() ??
+          [],
     );
   }
 }

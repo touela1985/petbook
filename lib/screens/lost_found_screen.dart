@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:uuid/uuid.dart';
 
 import '../data/found_pet_report_repository.dart';
 import '../data/lost_pet_report_repository.dart';
@@ -30,6 +31,7 @@ class LostFoundScreen extends StatefulWidget {
 class _LostFoundScreenState extends State<LostFoundScreen> {
   final LostPetReportRepository _lostRepo = LostPetReportRepository();
   final FoundPetReportRepository _foundRepo = FoundPetReportRepository();
+  final Uuid _uuid = const Uuid();
 
   Position? _userPosition;
   bool _isLoadingUserLocation = true;
@@ -172,6 +174,238 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
       ),
     );
     await _refreshScreen();
+  }
+
+  Future<void> _openSightingDialog(LostPetReport report) async {
+    final isEl = Localizations.localeOf(context).languageCode == 'el';
+    final notesController = TextEditingController();
+    final messenger = ScaffoldMessenger.maybeOf(context);
+
+    final String? submittedNotes = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 24,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
+          ),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isEl ? 'Δήλωση θέασης' : 'Report Sighting',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  isEl
+                      ? 'Μοιράσου γρήγορα μια πληροφορία αν είδες αυτό το ζώο.'
+                      : 'Quickly share a helpful update if you saw this pet.',
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F8F7),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: AppTheme.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 110,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xFFEAF7F5),
+                              Color(0xFFF5FBFA),
+                            ],
+                          ),
+                          border: Border.all(color: AppTheme.border),
+                        ),
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: Opacity(
+                                opacity: 0.18,
+                                child: CustomPaint(
+                                  painter: _MiniMapPainter(),
+                                ),
+                              ),
+                            ),
+                            const Center(
+                              child: Icon(
+                                Icons.location_on_rounded,
+                                size: 42,
+                                color: AppTheme.primaryTeal,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(top: 2),
+                            child: Icon(
+                              Icons.place_outlined,
+                              size: 18,
+                              color: AppTheme.primaryTeal,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              report.lastSeenLocation.trim().isEmpty
+                                  ? (isEl
+                                      ? 'Δεν υπάρχει καταχωρημένη τοποθεσία'
+                                      : 'No saved location')
+                                  : report.lastSeenLocation,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textPrimary,
+                                height: 1.3,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: notesController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText:
+                        isEl ? 'Σημειώσεις (προαιρετικό)' : 'Notes (optional)',
+                    hintText: isEl
+                        ? 'Π.χ. το είδα κοντά στο λιμάνι πριν λίγο'
+                        : 'e.g. I saw it near the harbor a few minutes ago',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        child: Text(isEl ? 'Άκυρο' : 'Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          FocusScope.of(sheetContext).unfocus();
+                          Navigator.pop(
+                            sheetContext,
+                            notesController.text.trim(),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryTeal,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: Text(isEl ? 'Υποβολή' : 'Submit'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (submittedNotes == null) {
+      notesController.dispose();
+      return;
+    }
+
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+
+    final newSighting = LostPetSighting(
+      id: _uuid.v4(),
+      location: report.lastSeenLocation.trim(),
+      notes: submittedNotes,
+    );
+
+    final updatedReport = LostPetReport(
+      id: report.id,
+      petName: report.petName,
+      type: report.type,
+      lastSeenLocation: report.lastSeenLocation,
+      lastSeenDate: report.lastSeenDate,
+      notes: report.notes,
+      contactPhone: report.contactPhone,
+      isResolved: report.isResolved,
+      photoPath: report.photoPath,
+      latitude: report.latitude,
+      longitude: report.longitude,
+      createdAt: report.createdAt,
+      sightings: [
+        ...report.sightings,
+        newSighting,
+      ],
+    );
+
+    await _lostRepo.updateReport(updatedReport);
+
+    if (!mounted) {
+      notesController.dispose();
+      return;
+    }
+
+    setState(() {
+      _lostReportsFuture = _loadLostReports();
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      messenger?.showSnackBar(
+        SnackBar(
+          content: Text(
+            isEl ? 'Η θέαση αποθηκεύτηκε.' : 'Sighting saved successfully.',
+          ),
+        ),
+      );
+    });
+
+    notesController.dispose();
   }
 
   void _openMapPreviewScreen(List<LostPetReport> lostReports) {
@@ -355,6 +589,7 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
                         isLoadingUserLocation: _isLoadingUserLocation,
                         onTap: () => _openLostReportDetails(report),
                         onMessageTap: () => _openLostMessageScreen(report),
+                        onSightingTap: () => _openSightingDialog(report),
                         onEdit: () => _editLostPetReport(report),
                         onDelete: () => _deleteLostReport(report),
                       );
@@ -1007,6 +1242,7 @@ class _LostReportCard extends StatelessWidget {
   final bool isLoadingUserLocation;
   final VoidCallback onTap;
   final VoidCallback onMessageTap;
+  final VoidCallback onSightingTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -1017,6 +1253,7 @@ class _LostReportCard extends StatelessWidget {
     required this.isLoadingUserLocation,
     required this.onTap,
     required this.onMessageTap,
+    required this.onSightingTap,
     required this.onEdit,
     required this.onDelete,
   });
@@ -1251,6 +1488,30 @@ Shared via Petbook
                       color: AppTheme.textSecondary,
                     ),
                   ],
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: onSightingTap,
+                    icon: const Icon(Icons.remove_red_eye_outlined),
+                    label: Text(isEl ? 'Το είδα' : 'I Saw It'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.primaryTeal,
+                      side: BorderSide(
+                        color: AppTheme.primaryTeal.withOpacity(0.22),
+                      ),
+                      backgroundColor: const Color(0xFFEAF7F5),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      textStyle: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -1488,4 +1749,80 @@ Shared via Petbook
       ),
     );
   }
+}
+
+class _MiniMapPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final gridPaint = Paint()
+      ..color = const Color(0xFF96B8B4).withOpacity(0.45)
+      ..strokeWidth = 1;
+
+    final roadPaint = Paint()
+      ..color = const Color(0xFFD6D0C2)
+      ..strokeWidth = 6
+      ..strokeCap = StrokeCap.round;
+
+    for (double x = 20; x < size.width; x += 36) {
+      canvas.drawLine(Offset(x, 0), Offset(x - 20, size.height), gridPaint);
+    }
+
+    for (double y = 18; y < size.height; y += 28) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y + 6), gridPaint);
+    }
+
+    final path1 = Path()
+      ..moveTo(12, size.height * 0.70)
+      ..quadraticBezierTo(
+        size.width * 0.28,
+        size.height * 0.54,
+        size.width * 0.56,
+        size.height * 0.62,
+      )
+      ..quadraticBezierTo(
+        size.width * 0.78,
+        size.height * 0.68,
+        size.width - 14,
+        size.height * 0.38,
+      );
+
+    final path2 = Path()
+      ..moveTo(size.width * 0.18, 8)
+      ..quadraticBezierTo(
+        size.width * 0.34,
+        size.height * 0.24,
+        size.width * 0.52,
+        size.height * 0.18,
+      )
+      ..quadraticBezierTo(
+        size.width * 0.74,
+        size.height * 0.12,
+        size.width * 0.90,
+        size.height * 0.36,
+      );
+
+    canvas.drawPath(path1, roadPaint);
+    canvas.drawPath(path2, roadPaint);
+
+    final waterPaint = Paint()
+      ..color = const Color(0xFFBFDDE2).withOpacity(0.60);
+
+    final waterPath = Path()
+      ..moveTo(size.width * 0.72, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width, size.height)
+      ..lineTo(size.width * 0.86, size.height * 0.84)
+      ..quadraticBezierTo(
+        size.width * 0.78,
+        size.height * 0.62,
+        size.width * 0.72,
+        size.height * 0.44,
+      )
+      ..close();
+
+    canvas.drawPath(waterPath, waterPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
