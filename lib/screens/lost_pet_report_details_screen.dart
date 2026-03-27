@@ -32,18 +32,20 @@ class _LostPetReportDetailsScreenState
       LostPetMessageRepository();
   final LostPetReportRepository _reportRepository = LostPetReportRepository();
 
+  late LostPetReport _report;
+
   int _messageCount = 0;
   bool _isMarkingResolved = false;
 
   @override
   void initState() {
     super.initState();
+    _report = widget.report;
     _loadMessageStats();
   }
 
   Future<void> _loadMessageStats() async {
-    final messages =
-        await _messageRepository.getMessagesForReport(widget.report.id);
+    final messages = await _messageRepository.getMessagesForReport(_report.id);
     if (!mounted) return;
     setState(() {
       _messageCount = messages.length;
@@ -57,20 +59,32 @@ class _LostPetReportDetailsScreenState
     return '$day/$month/$year';
   }
 
+  String _formatDateTime(DateTime date) {
+    final formattedDate = _formatDate(date);
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$formattedDate • $hour:$minute';
+  }
+
   bool get _isEl => Localizations.localeOf(context).languageCode == 'el';
 
   bool get _hasCoordinates =>
-      widget.report.latitude != null && widget.report.longitude != null;
+      _report.latitude != null && _report.longitude != null;
 
   bool get _hasPhoto =>
-      widget.report.photoPath != null &&
-      widget.report.photoPath!.trim().isNotEmpty;
+      _report.photoPath != null && _report.photoPath!.trim().isNotEmpty;
 
-  bool get _hasPhone => widget.report.contactPhone.trim().isNotEmpty;
+  bool get _hasPhone => _report.contactPhone.trim().isNotEmpty;
 
-  String get _displayPetName => widget.report.petName.trim().isEmpty
+  String get _displayPetName => _report.petName.trim().isEmpty
       ? (_isEl ? 'Χαμένο ζώο' : 'Lost pet')
-      : widget.report.petName.trim();
+      : _report.petName.trim();
+
+  List<LostPetSighting> get _sortedSightings {
+    final sightings = [..._report.sightings];
+    sightings.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return sightings;
+  }
 
   String get _messageSubtitle {
     if (_messageCount == 0) {
@@ -85,12 +99,12 @@ class _LostPetReportDetailsScreenState
   Widget _buildReportImage({
     double? height,
     double? width,
-    BoxFit fit = BoxFit.cover,
+    BoxFit fit = BoxFit.contain,
   }) {
     if (!_hasPhoto) {
       return Container(
         height: height ?? 220,
-        width: width ?? 220,
+        width: width ?? double.infinity,
         decoration: BoxDecoration(
           color: AppTheme.surface,
           borderRadius: BorderRadius.circular(18),
@@ -104,12 +118,12 @@ class _LostPetReportDetailsScreenState
       );
     }
 
-    final path = widget.report.photoPath!.trim();
+    final path = _report.photoPath!.trim();
 
     Widget fallback() {
       return Container(
         height: height ?? 220,
-        width: width ?? 220,
+        width: width ?? double.infinity,
         decoration: BoxDecoration(
           color: AppTheme.surface,
           borderRadius: BorderRadius.circular(18),
@@ -191,15 +205,15 @@ class _LostPetReportDetailsScreenState
         builder: (_) => _LostReportMapScreen(
           isEl: _isEl,
           petName: _displayPetName,
-          latitude: widget.report.latitude!,
-          longitude: widget.report.longitude!,
+          latitude: _report.latitude!,
+          longitude: _report.longitude!,
         ),
       ),
     );
   }
 
   Future<void> _callOwner() async {
-    final phone = widget.report.contactPhone.trim();
+    final phone = _report.contactPhone.trim();
     if (phone.isEmpty) return;
 
     final uri = Uri.parse('tel:$phone');
@@ -210,7 +224,7 @@ class _LostPetReportDetailsScreenState
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => SendLostPetMessageScreen(report: widget.report),
+        builder: (_) => SendLostPetMessageScreen(report: _report),
       ),
     );
 
@@ -223,7 +237,7 @@ class _LostPetReportDetailsScreenState
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => LostPetMessagesScreen(report: widget.report),
+        builder: (_) => LostPetMessagesScreen(report: _report),
       ),
     );
 
@@ -232,23 +246,23 @@ class _LostPetReportDetailsScreenState
 
   Future<void> _shareReport() async {
     final contact = _hasPhone
-        ? widget.report.contactPhone.trim()
+        ? _report.contactPhone.trim()
         : (_isEl ? 'Δεν υπάρχει τηλέφωνο' : 'No phone provided');
 
     final text = _isEl
         ? '''
 Ειδοποίηση απώλειας
 Ζώο: $_displayPetName
-Τοποθεσία: ${widget.report.lastSeenLocation}
-Ημερομηνία: ${_formatDate(widget.report.lastSeenDate)}
+Τοποθεσία: ${_report.lastSeenLocation}
+Ημερομηνία: ${_formatDate(_report.lastSeenDate)}
 Επικοινωνία: $contact
 Κοινοποιήθηκε μέσω Petbook
 '''
         : '''
 Lost pet alert
 Pet: $_displayPetName
-Location: ${widget.report.lastSeenLocation}
-Date: ${_formatDate(widget.report.lastSeenDate)}
+Location: ${_report.lastSeenLocation}
+Date: ${_formatDate(_report.lastSeenDate)}
 Contact: $contact
 Shared via Petbook
 ''';
@@ -256,8 +270,75 @@ Shared via Petbook
     await Share.share(text);
   }
 
+  Future<void> _deleteSighting(LostPetSighting sighting) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(_isEl ? 'Διαγραφή θέασης' : 'Delete sighting'),
+          content: Text(
+            _isEl
+                ? 'Θέλεις σίγουρα να διαγράψεις αυτή τη θέαση;'
+                : 'Are you sure you want to delete this sighting?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(_isEl ? 'Ακύρωση' : 'Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: Text(_isEl ? 'Διαγραφή' : 'Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
+    final updatedSightings =
+        _report.sightings.where((item) => item.id != sighting.id).toList();
+
+    final updatedReport = LostPetReport(
+      id: _report.id,
+      petName: _report.petName,
+      type: _report.type,
+      lastSeenLocation: _report.lastSeenLocation,
+      lastSeenDate: _report.lastSeenDate,
+      notes: _report.notes,
+      contactPhone: _report.contactPhone,
+      isResolved: _report.isResolved,
+      photoPath: _report.photoPath,
+      latitude: _report.latitude,
+      longitude: _report.longitude,
+      createdAt: _report.createdAt,
+      sightings: updatedSightings,
+    );
+
+    await _reportRepository.updateReport(updatedReport);
+
+    if (!mounted) return;
+
+    setState(() {
+      _report = updatedReport;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _isEl ? 'Η θέαση διαγράφηκε.' : 'Sighting deleted.',
+        ),
+      ),
+    );
+  }
+
   Future<void> _markAsFound() async {
-    if (widget.report.isResolved || _isMarkingResolved) return;
+    if (_report.isResolved || _isMarkingResolved) return;
 
     final confirm = await showDialog<bool>(
       context: context,
@@ -290,18 +371,19 @@ Shared via Petbook
     });
 
     final updatedReport = LostPetReport(
-      id: widget.report.id,
-      petName: widget.report.petName,
-      type: widget.report.type,
-      lastSeenLocation: widget.report.lastSeenLocation,
-      lastSeenDate: widget.report.lastSeenDate,
-      notes: widget.report.notes,
-      contactPhone: widget.report.contactPhone,
+      id: _report.id,
+      petName: _report.petName,
+      type: _report.type,
+      lastSeenLocation: _report.lastSeenLocation,
+      lastSeenDate: _report.lastSeenDate,
+      notes: _report.notes,
+      contactPhone: _report.contactPhone,
       isResolved: true,
-      photoPath: widget.report.photoPath,
-      latitude: widget.report.latitude,
-      longitude: widget.report.longitude,
-      createdAt: widget.report.createdAt,
+      photoPath: _report.photoPath,
+      latitude: _report.latitude,
+      longitude: _report.longitude,
+      createdAt: _report.createdAt,
+      sightings: _report.sightings,
     );
 
     await _reportRepository.updateReport(updatedReport);
@@ -312,7 +394,7 @@ Shared via Petbook
 
   @override
   Widget build(BuildContext context) {
-    final isResolved = widget.report.isResolved;
+    final isResolved = _report.isResolved;
     final isEl = _isEl;
 
     return Scaffold(
@@ -358,13 +440,14 @@ Shared via Petbook
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(18),
-                            child: SizedBox(
-                              height: 220,
+                            child: Container(
+                              height: 260,
                               width: double.infinity,
+                              color: const Color(0xFFF5F4EF),
                               child: _buildReportImage(
-                                height: 220,
+                                height: 260,
                                 width: double.infinity,
-                                fit: BoxFit.cover,
+                                fit: BoxFit.contain,
                               ),
                             ),
                           ),
@@ -394,10 +477,10 @@ Shared via Petbook
                       color: AppTheme.textPrimary,
                     ),
                   ),
-                  if (widget.report.type.trim().isNotEmpty) ...[
+                  if (_report.type.trim().isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text(
-                      widget.report.type.trim(),
+                      _report.type.trim(),
                       style: const TextStyle(
                         color: AppTheme.textSecondary,
                         fontWeight: FontWeight.w500,
@@ -419,9 +502,11 @@ Shared via Petbook
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          widget.report.lastSeenLocation.trim().isEmpty
-                              ? (isEl ? 'Δεν υπάρχει τοποθεσία' : 'No location added')
-                              : widget.report.lastSeenLocation,
+                          _report.lastSeenLocation.trim().isEmpty
+                              ? (isEl
+                                  ? 'Δεν υπάρχει τοποθεσία'
+                                  : 'No location added')
+                              : _report.lastSeenLocation,
                           style: const TextStyle(
                             fontWeight: FontWeight.w700,
                             height: 1.3,
@@ -433,7 +518,7 @@ Shared via Petbook
                   if (_hasCoordinates) ...[
                     const SizedBox(height: 10),
                     Text(
-                      '${widget.report.latitude!.toStringAsFixed(5)}, ${widget.report.longitude!.toStringAsFixed(5)}',
+                      '${_report.latitude!.toStringAsFixed(5)}, ${_report.longitude!.toStringAsFixed(5)}',
                       style: const TextStyle(
                         color: AppTheme.textSecondary,
                         fontWeight: FontWeight.w500,
@@ -471,14 +556,14 @@ Shared via Petbook
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        _formatDate(widget.report.lastSeenDate),
+                        _formatDate(_report.lastSeenDate),
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
-                  if (widget.report.notes.trim().isNotEmpty) ...[
+                  if (_report.notes.trim().isNotEmpty) ...[
                     const SizedBox(height: 20),
                     Text(
                       isEl ? 'Σημειώσεις' : 'Notes',
@@ -497,8 +582,167 @@ Shared via Petbook
                         border: Border.all(color: AppTheme.border),
                       ),
                       child: Text(
-                        widget.report.notes.trim(),
+                        _report.notes.trim(),
                         style: const TextStyle(height: 1.4),
+                      ),
+                    ),
+                  ],
+                  if (_sortedSightings.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.remove_red_eye_outlined,
+                          size: 20,
+                          color: AppTheme.primaryTeal,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          isEl ? 'Θεάσεις' : 'Sightings',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 17,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryTeal.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: AppTheme.primaryTeal.withOpacity(0.18),
+                            ),
+                          ),
+                          child: Text(
+                            '${_sortedSightings.length}',
+                            style: const TextStyle(
+                              color: AppTheme.primaryTeal,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    ..._sortedSightings.map(
+                      (sighting) => Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF9F8F5),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: AppTheme.border,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  height: 34,
+                                  width: 34,
+                                  decoration: BoxDecoration(
+                                    color:
+                                        AppTheme.primaryTeal.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(
+                                    Icons.remove_red_eye_outlined,
+                                    size: 18,
+                                    color: AppTheme.primaryTeal,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 3),
+                                    child: Text(
+                                      sighting.location.trim().isEmpty
+                                          ? (isEl
+                                              ? 'Δεν υπάρχει τοποθεσία'
+                                              : 'No location')
+                                          : sighting.location.trim(),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        height: 1.3,
+                                        color: AppTheme.textPrimary,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () => _deleteSighting(sighting),
+                                  tooltip: isEl ? 'Διαγραφή' : 'Delete',
+                                  splashRadius: 20,
+                                  icon: const Icon(
+                                    Icons.delete_outline_rounded,
+                                    color: AppTheme.textSecondary,
+                                    size: 20,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (sighting.notes.trim().isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: AppTheme.border.withOpacity(0.9),
+                                  ),
+                                ),
+                                child: Text(
+                                  sighting.notes.trim(),
+                                  style: const TextStyle(
+                                    color: AppTheme.textPrimary,
+                                    height: 1.45,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.schedule_rounded,
+                                  size: 15,
+                                  color: AppTheme.textSecondary,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  _formatDateTime(sighting.createdAt),
+                                  style: const TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -565,8 +809,12 @@ Shared via Petbook
                             : const Icon(Icons.check_circle_outline_rounded),
                         label: Text(
                           _isMarkingResolved
-                              ? (isEl ? 'Κλείσιμο ειδοποίησης...' : 'Closing alert...')
-                              : (isEl ? 'Σήμανση ως βρέθηκε' : 'Mark as Found'),
+                              ? (isEl
+                                  ? 'Κλείσιμο ειδοποίησης...'
+                                  : 'Closing alert...')
+                              : (isEl
+                                  ? 'Σήμανση ως βρέθηκε'
+                                  : 'Mark as Found'),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primaryTeal,
@@ -590,7 +838,7 @@ Shared via Petbook
                   const SizedBox(height: 10),
                   if (_hasPhone) ...[
                     Text(
-                      widget.report.contactPhone.trim(),
+                      _report.contactPhone.trim(),
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
