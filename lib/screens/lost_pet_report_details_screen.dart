@@ -80,6 +80,11 @@ class _LostPetReportDetailsScreenState
       ? (_isEl ? 'Χαμένο ζώο' : 'Lost pet')
       : _report.petName.trim();
 
+  String get _headerSubtitle {
+    if (_report.type.trim().isNotEmpty) return _report.type.trim();
+    return _isEl ? 'Αναφορά απώλειας' : 'Lost pet alert';
+  }
+
   List<LostPetSighting> get _sortedSightings {
     final sightings = [..._report.sightings];
     sightings.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -99,21 +104,19 @@ class _LostPetReportDetailsScreenState
   Widget _buildReportImage({
     double? height,
     double? width,
-    BoxFit fit = BoxFit.contain,
+    BoxFit fit = BoxFit.cover,
   }) {
     if (!_hasPhoto) {
       return Container(
-        height: height ?? 220,
+        height: height ?? 244,
         width: width ?? double.infinity,
-        decoration: BoxDecoration(
-          color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppTheme.border),
-        ),
-        child: const Icon(
-          Icons.pets,
-          size: 44,
-          color: AppTheme.textSecondary,
+        color: AppTheme.surface,
+        child: const Center(
+          child: Icon(
+            Icons.pets,
+            size: 56,
+            color: AppTheme.textSecondary,
+          ),
         ),
       );
     }
@@ -122,17 +125,15 @@ class _LostPetReportDetailsScreenState
 
     Widget fallback() {
       return Container(
-        height: height ?? 220,
+        height: height ?? 244,
         width: width ?? double.infinity,
-        decoration: BoxDecoration(
-          color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppTheme.border),
-        ),
-        child: const Icon(
-          Icons.broken_image_outlined,
-          size: 44,
-          color: AppTheme.textSecondary,
+        color: AppTheme.surface,
+        child: const Center(
+          child: Icon(
+            Icons.broken_image_outlined,
+            size: 56,
+            color: AppTheme.textSecondary,
+          ),
         ),
       );
     }
@@ -161,9 +162,10 @@ class _LostPetReportDetailsScreenState
 
     showDialog(
       context: context,
+      barrierColor: Colors.black.withOpacity(0.9),
       builder: (_) {
         return Dialog(
-          backgroundColor: Colors.black,
+          backgroundColor: Colors.transparent,
           insetPadding: const EdgeInsets.all(12),
           child: Stack(
             children: [
@@ -400,195 +402,155 @@ Shared via Petbook
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
+        elevation: 0,
         title: Text(isEl ? 'Χαμένο ζώο' : 'Lost Pet Alert'),
       ),
       body: SafeArea(
+        top: false,
         child: ListView(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            16,
-            16,
-            MediaQuery.of(context).padding.bottom + 16,
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).padding.bottom + 20,
           ),
           children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: AppTheme.surface,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppTheme.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 14,
-                    offset: const Offset(0, 6),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _hasPhoto ? () => _openFullImage(context) : null,
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(28),
+                    ),
+                    child: SizedBox(
+                      height: 244,
+                      width: double.infinity,
+                      child: _buildReportImage(
+                        height: 244,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 16,
+                    bottom: 16,
+                    child: isResolved
+                        ? _ResolvedStatusBadge(isEl: isEl)
+                        : _LostStatusBadge(isEl: isEl),
                   ),
                 ],
               ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  isResolved
-                      ? _ResolvedStatusBadge(isEl: isEl)
-                      : _LostStatusBadge(isEl: isEl),
-                  const SizedBox(height: 14),
-                  Center(
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(18),
-                      onTap: _hasPhoto ? () => _openFullImage(context) : null,
-                      child: Column(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(18),
-                            child: Container(
-                              height: 260,
-                              width: double.infinity,
-                              color: const Color(0xFFF5F4EF),
-                              child: _buildReportImage(
-                                height: 260,
-                                width: double.infinity,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          ),
-                          if (_hasPhoto) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              isEl
-                                  ? 'Πάτησε τη φωτογραφία για μεγέθυνση'
-                                  : 'Tap image to enlarge',
-                              style: const TextStyle(
-                                color: AppTheme.textSecondary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
                   Text(
                     _displayPetName,
                     style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900,
                       color: AppTheme.textPrimary,
+                      height: 1.06,
                     ),
                   ),
-                  if (_report.type.trim().isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      _report.type.trim(),
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontWeight: FontWeight.w500,
-                      ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _headerSubtitle,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textSecondary.withOpacity(0.82),
                     ),
-                  ],
+                  ),
                   const SizedBox(height: 18),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.only(top: 2),
-                        child: Icon(
-                          Icons.location_on_outlined,
-                          size: 18,
-                          color: AppTheme.lostFound,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _report.lastSeenLocation.trim().isEmpty
-                              ? (isEl
-                                  ? 'Δεν υπάρχει τοποθεσία'
-                                  : 'No location added')
-                              : _report.lastSeenLocation,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            height: 1.3,
+                  _MainCard(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _InfoRow(
+                          icon: Icons.location_on_outlined,
+                          iconColor: AppTheme.lostFound,
+                          child: Text(
+                            _report.lastSeenLocation.trim().isEmpty
+                                ? (isEl
+                                    ? 'Δεν υπάρχει τοποθεσία'
+                                    : 'No location added')
+                                : _report.lastSeenLocation,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              height: 1.3,
+                              color: AppTheme.textPrimary,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  if (_hasCoordinates) ...[
-                    const SizedBox(height: 10),
-                    Text(
-                      '${_report.latitude!.toStringAsFixed(5)}, ${_report.longitude!.toStringAsFixed(5)}',
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontWeight: FontWeight.w500,
-                      ),
+                        if (_hasCoordinates) ...[
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _openMapScreen(context),
+                              icon: const Icon(Icons.map_outlined),
+                              label: Text(
+                                isEl ? 'Άνοιγμα χάρτη' : 'Open location on map',
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppTheme.primaryTeal,
+                                backgroundColor:
+                                    AppTheme.primaryTeal.withOpacity(0.05),
+                                side: BorderSide(
+                                  color: AppTheme.primaryTeal.withOpacity(0.18),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                textStyle: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        _InfoRow(
+                          icon: Icons.calendar_today_outlined,
+                          iconColor: AppTheme.textSecondary,
+                          child: Text(
+                            _formatDate(_report.lastSeenDate),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: AppTheme.textSecondary.withOpacity(0.88),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () => _openMapScreen(context),
-                        icon: const Icon(Icons.map_outlined),
-                        label: Text(
-                          isEl ? 'Άνοιγμα χάρτη' : 'Open location on map',
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppTheme.primaryTeal,
-                          side: BorderSide(
-                            color: AppTheme.primaryTeal.withOpacity(0.24),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.calendar_today_outlined,
-                        size: 18,
-                        color: AppTheme.textSecondary,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _formatDate(_report.lastSeenDate),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
                   ),
                   if (_report.notes.trim().isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    Text(
-                      isEl ? 'Σημειώσεις' : 'Notes',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 17,
-                      ),
-                    ),
+                    const SizedBox(height: 16),
+                    const _SectionTitle('Notes', 'Σημειώσεις'),
                     const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
+                    _SecondaryCard(
                       padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: AppTheme.background,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppTheme.border),
-                      ),
                       child: Text(
                         _report.notes.trim(),
-                        style: const TextStyle(height: 1.4),
+                        style: const TextStyle(
+                          height: 1.45,
+                          color: AppTheme.textPrimary,
+                        ),
                       ),
                     ),
                   ],
                   if (_sortedSightings.isNotEmpty) ...[
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 18),
                     Row(
                       children: [
                         const Icon(
@@ -631,130 +593,17 @@ Shared via Petbook
                     ),
                     const SizedBox(height: 10),
                     ..._sortedSightings.map(
-                      (sighting) => Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF9F8F5),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: AppTheme.border,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.03),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  height: 34,
-                                  width: 34,
-                                  decoration: BoxDecoration(
-                                    color:
-                                        AppTheme.primaryTeal.withOpacity(0.08),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Icon(
-                                    Icons.remove_red_eye_outlined,
-                                    size: 18,
-                                    color: AppTheme.primaryTeal,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(top: 3),
-                                    child: Text(
-                                      sighting.location.trim().isEmpty
-                                          ? (isEl
-                                              ? 'Δεν υπάρχει τοποθεσία'
-                                              : 'No location')
-                                          : sighting.location.trim(),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w800,
-                                        height: 1.3,
-                                        color: AppTheme.textPrimary,
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: () => _deleteSighting(sighting),
-                                  tooltip: isEl ? 'Διαγραφή' : 'Delete',
-                                  splashRadius: 20,
-                                  icon: const Icon(
-                                    Icons.delete_outline_rounded,
-                                    color: AppTheme.textSecondary,
-                                    size: 20,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (sighting.notes.trim().isNotEmpty) ...[
-                              const SizedBox(height: 10),
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: AppTheme.border.withOpacity(0.9),
-                                  ),
-                                ),
-                                child: Text(
-                                  sighting.notes.trim(),
-                                  style: const TextStyle(
-                                    color: AppTheme.textPrimary,
-                                    height: 1.45,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.schedule_rounded,
-                                  size: 15,
-                                  color: AppTheme.textSecondary,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  _formatDateTime(sighting.createdAt),
-                                  style: const TextStyle(
-                                    color: AppTheme.textSecondary,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                      (sighting) => _SightingEntryCard(
+                        isEl: isEl,
+                        sighting: sighting,
+                        formattedDateTime: _formatDateTime(sighting.createdAt),
+                        onDelete: () => _deleteSighting(sighting),
                       ),
                     ),
                   ],
-                  const SizedBox(height: 20),
-                  Container(
-                    width: double.infinity,
+                  const SizedBox(height: 18),
+                  _MainCard(
                     padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppTheme.background,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTheme.border),
-                    ),
                     child: Row(
                       children: [
                         const Icon(
@@ -786,12 +635,21 @@ Shared via Petbook
                         ),
                         TextButton(
                           onPressed: () => _openMessages(context),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
                           child: Text(isEl ? 'Προβολή' : 'View'),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 18),
                   if (!isResolved) ...[
                     SizedBox(
                       width: double.infinity,
@@ -819,14 +677,20 @@ Shared via Petbook
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primaryTeal,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          elevation: 5,
+                          shadowColor: Colors.black.withOpacity(0.24),
+                          padding: const EdgeInsets.symmetric(vertical: 18),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                          textStyle: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 18),
                   ],
                   Text(
                     isEl ? 'Επικοινωνία' : 'Contact owner',
@@ -846,15 +710,6 @@ Shared via Petbook
                       ),
                     ),
                     const SizedBox(height: 12),
-                  ] else ...[
-                    Text(
-                      isEl ? 'Δεν υπάρχει τηλέφωνο' : 'No phone provided',
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
                   ],
                   Row(
                     children: [
@@ -867,7 +722,7 @@ Shared via Petbook
                             color: Colors.green,
                           ),
                         ),
-                      if (_hasPhone) const SizedBox(width: 8),
+                      if (_hasPhone) const SizedBox(width: 10),
                       Expanded(
                         child: _DetailsActionButton(
                           label: isEl ? 'Μήνυμα' : 'Message',
@@ -876,7 +731,7 @@ Shared via Petbook
                           color: AppTheme.primaryTeal,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: _DetailsActionButton(
                           label: isEl ? 'Κοινοπ.' : 'Share',
@@ -897,6 +752,242 @@ Shared via Petbook
   }
 }
 
+class _MainCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  const _MainCard({
+    required this.child,
+    this.padding = const EdgeInsets.all(14),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _SecondaryCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  const _SecondaryCard({
+    required this.child,
+    this.padding = const EdgeInsets.all(12),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: AppTheme.background,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.border.withOpacity(0.8)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.025),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String en;
+  final String el;
+
+  const _SectionTitle(this.en, this.el);
+
+  @override
+  Widget build(BuildContext context) {
+    final isEl = Localizations.localeOf(context).languageCode == 'el';
+    return Text(
+      isEl ? el : en,
+      style: const TextStyle(
+        fontWeight: FontWeight.w800,
+        fontSize: 17,
+        color: AppTheme.textPrimary,
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final Widget child;
+
+  const _InfoRow({
+    required this.icon,
+    required this.iconColor,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Icon(
+            icon,
+            size: 18,
+            color: iconColor,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: child),
+      ],
+    );
+  }
+}
+
+class _SightingEntryCard extends StatelessWidget {
+  final bool isEl;
+  final LostPetSighting sighting;
+  final String formattedDateTime;
+  final VoidCallback onDelete;
+
+  const _SightingEntryCard({
+    required this.isEl,
+    required this.sighting,
+    required this.formattedDateTime,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasNote = sighting.notes.trim().isNotEmpty;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppTheme.border.withOpacity(0.72),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.055),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                height: 30,
+                width: 30,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryTeal.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.remove_red_eye_outlined,
+                  size: 17,
+                  color: AppTheme.primaryTeal,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  isEl ? 'Θέαση' : 'Sighting',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14.5,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: onDelete,
+                tooltip: isEl ? 'Διαγραφή' : 'Delete',
+                splashRadius: 18,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minHeight: 34,
+                  minWidth: 34,
+                ),
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: AppTheme.textSecondary,
+                  size: 20,
+                ),
+              ),
+            ],
+          ),
+          if (hasNote) ...[
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.only(left: 40),
+              child: Text(
+                sighting.notes.trim(),
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  height: 1.4,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.only(left: 40),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.schedule_rounded,
+                  size: 14,
+                  color: AppTheme.textSecondary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  formattedDateTime,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _LostStatusBadge extends StatelessWidget {
   final bool isEl;
 
@@ -907,11 +998,15 @@ class _LostStatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppTheme.lostFound.withOpacity(0.10),
+        color: AppTheme.lostFound.withOpacity(0.9),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: AppTheme.lostFound.withOpacity(0.24),
-        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -919,13 +1014,13 @@ class _LostStatusBadge extends StatelessWidget {
           const Icon(
             Icons.warning_amber_rounded,
             size: 15,
-            color: AppTheme.lostFound,
+            color: Colors.white,
           ),
           const SizedBox(width: 6),
           Text(
             isEl ? 'ΧΑΘΗΚΕ' : 'LOST ALERT',
             style: const TextStyle(
-              color: AppTheme.lostFound,
+              color: Colors.white,
               fontSize: 12,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.3,
@@ -947,11 +1042,15 @@ class _ResolvedStatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppTheme.primaryTeal.withOpacity(0.10),
+        color: AppTheme.primaryTeal.withOpacity(0.95),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: AppTheme.primaryTeal.withOpacity(0.24),
-        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -959,13 +1058,13 @@ class _ResolvedStatusBadge extends StatelessWidget {
           const Icon(
             Icons.check_circle_rounded,
             size: 15,
-            color: AppTheme.primaryTeal,
+            color: Colors.white,
           ),
           const SizedBox(width: 6),
           Text(
             isEl ? 'ΒΡΕΘΗΚΕ / ΚΛΕΙΣΤΟ' : 'FOUND / CLOSED',
             style: const TextStyle(
-              color: AppTheme.primaryTeal,
+              color: Colors.white,
               fontSize: 12,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.3,
@@ -992,23 +1091,26 @@ class _DetailsActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, size: 18),
-      label: Text(label),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: color,
-        backgroundColor: color.withOpacity(0.04),
-        side: BorderSide(
-          color: color.withOpacity(0.22),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 13),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        textStyle: const TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 13,
+    return SizedBox(
+      height: 54,
+      child: OutlinedButton.icon(
+        onPressed: onTap,
+        icon: Icon(icon, size: 18),
+        label: Text(label),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: color,
+          backgroundColor: color.withOpacity(0.04),
+          side: BorderSide(
+            color: color.withOpacity(0.2),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
         ),
       ),
     );

@@ -177,240 +177,241 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
   }
 
   Future<void> _openSightingDialog(LostPetReport report) async {
-  final isEl = Localizations.localeOf(context).languageCode == 'el';
-  String typedNotes = '';
+    final isEl = Localizations.localeOf(context).languageCode == 'el';
+    String typedNotes = '';
 
-  final String? submittedNotes = await showModalBottomSheet<String>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: Colors.transparent,
-    builder: (sheetContext) {
-      final media = MediaQuery.of(sheetContext);
-      final bottomInset = media.viewInsets.bottom;
+    final String? submittedNotes = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        final media = MediaQuery.of(sheetContext);
+        final bottomInset = media.viewInsets.bottom;
 
-      return SafeArea(
-        top: false,
-        child: AnimatedPadding(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          padding: EdgeInsets.fromLTRB(
-            16,
-            8,
-            16,
-            bottomInset > 0 ? bottomInset + 12 : media.padding.bottom + 12,
-          ),
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: Material(
-              color: Colors.transparent,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isEl ? 'Δήλωση θέασης' : 'Report Sighting',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.textPrimary,
+        return SafeArea(
+          top: false,
+          child: AnimatedPadding(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            padding: EdgeInsets.fromLTRB(
+              16,
+              8,
+              16,
+              bottomInset > 0 ? bottomInset + 12 : media.padding.bottom + 12,
+            ),
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isEl ? 'Δήλωση θέασης' : 'Report Sighting',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.textPrimary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      isEl
-                          ? 'Μοιράσου γρήγορα μια πληροφορία αν είδες αυτό το ζώο.'
-                          : 'Quickly share a helpful update if you saw this pet.',
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        height: 1.35,
+                      const SizedBox(height: 8),
+                      Text(
+                        isEl
+                            ? 'Μοιράσου γρήγορα μια πληροφορία αν είδες αυτό το ζώο.'
+                            : 'Quickly share a helpful update if you saw this pet.',
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          height: 1.35,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 14),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F8F7),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: AppTheme.border),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            height: 110,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(14),
-                              gradient: const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Color(0xFFEAF7F5),
-                                  Color(0xFFF5FBFA),
-                                ],
+                      const SizedBox(height: 14),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F8F7),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: AppTheme.border),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              height: 110,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFFEAF7F5),
+                                    Color(0xFFF5FBFA),
+                                  ],
+                                ),
+                                border: Border.all(color: AppTheme.border),
                               ),
-                              border: Border.all(color: AppTheme.border),
-                            ),
-                            child: Stack(
-                              children: [
-                                Positioned.fill(
-                                  child: Opacity(
-                                    opacity: 0.18,
-                                    child: CustomPaint(
-                                      painter: _MiniMapPainter(),
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: Opacity(
+                                      opacity: 0.18,
+                                      child: CustomPaint(
+                                        painter: _MiniMapPainter(),
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const Center(
+                                  const Center(
+                                    child: Icon(
+                                      Icons.location_on_rounded,
+                                      size: 42,
+                                      color: AppTheme.primaryTeal,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Padding(
+                                  padding: EdgeInsets.only(top: 2),
                                   child: Icon(
-                                    Icons.location_on_rounded,
-                                    size: 42,
+                                    Icons.place_outlined,
+                                    size: 18,
                                     color: AppTheme.primaryTeal,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    report.lastSeenLocation.trim().isEmpty
+                                        ? (isEl
+                                            ? 'Δεν υπάρχει καταχωρημένη τοποθεσία'
+                                            : 'No saved location')
+                                        : report.lastSeenLocation,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.textPrimary,
+                                      height: 1.3,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      TextField(
+                        maxLines: 3,
+                        textInputAction: TextInputAction.done,
+                        onChanged: (value) {
+                          typedNotes = value;
+                        },
+                        decoration: InputDecoration(
+                          labelText: isEl
+                              ? 'Σημειώσεις (προαιρετικό)'
+                              : 'Notes (optional)',
+                          hintText: isEl
+                              ? 'Π.χ. το είδα κοντά στο λιμάνι πριν λίγο'
+                              : 'e.g. I saw it near the harbor a few minutes ago',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextButton(
+                              onPressed: () => Navigator.of(sheetContext).pop(),
+                              child: Text(isEl ? 'Άκυρο' : 'Cancel'),
+                            ),
                           ),
-                          const SizedBox(height: 10),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Padding(
-                                padding: EdgeInsets.only(top: 2),
-                                child: Icon(
-                                  Icons.place_outlined,
-                                  size: 18,
-                                  color: AppTheme.primaryTeal,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                FocusScope.of(sheetContext).unfocus();
+                                Navigator.of(sheetContext)
+                                    .pop(typedNotes.trim());
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryTeal,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  report.lastSeenLocation.trim().isEmpty
-                                      ? (isEl
-                                          ? 'Δεν υπάρχει καταχωρημένη τοποθεσία'
-                                          : 'No saved location')
-                                      : report.lastSeenLocation,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    color: AppTheme.textPrimary,
-                                    height: 1.3,
-                                  ),
-                                ),
-                              ),
-                            ],
+                              child: Text(isEl ? 'Υποβολή' : 'Submit'),
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 14),
-                    TextField(
-                      maxLines: 3,
-                      textInputAction: TextInputAction.done,
-                      onChanged: (value) {
-                        typedNotes = value;
-                      },
-                      decoration: InputDecoration(
-                        labelText: isEl
-                            ? 'Σημειώσεις (προαιρετικό)'
-                            : 'Notes (optional)',
-                        hintText: isEl
-                            ? 'Π.χ. το είδα κοντά στο λιμάνι πριν λίγο'
-                            : 'e.g. I saw it near the harbor a few minutes ago',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextButton(
-                            onPressed: () => Navigator.of(sheetContext).pop(),
-                            child: Text(isEl ? 'Άκυρο' : 'Cancel'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              FocusScope.of(sheetContext).unfocus();
-                              Navigator.of(sheetContext).pop(typedNotes.trim());
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryTeal,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                            child: Text(isEl ? 'Υποβολή' : 'Submit'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
+        );
+      },
+    );
+
+    if (submittedNotes == null) return;
+
+    final newSighting = LostPetSighting(
+      id: _uuid.v4(),
+      location: report.lastSeenLocation.trim(),
+      notes: submittedNotes,
+    );
+
+    final updatedReport = LostPetReport(
+      id: report.id,
+      petName: report.petName,
+      type: report.type,
+      lastSeenLocation: report.lastSeenLocation,
+      lastSeenDate: report.lastSeenDate,
+      notes: report.notes,
+      contactPhone: report.contactPhone,
+      isResolved: report.isResolved,
+      photoPath: report.photoPath,
+      latitude: report.latitude,
+      longitude: report.longitude,
+      createdAt: report.createdAt,
+      sightings: [
+        ...report.sightings,
+        newSighting,
+      ],
+    );
+
+    await _lostRepo.updateReport(updatedReport);
+
+    if (!mounted) return;
+
+    setState(() {
+      _lostReportsFuture = _loadLostReports();
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isEl ? 'Η θέαση αποθηκεύτηκε.' : 'Sighting saved successfully.',
         ),
-      );
-    },
-  );
-
-  if (submittedNotes == null) return;
-
-  final newSighting = LostPetSighting(
-    id: _uuid.v4(),
-    location: report.lastSeenLocation.trim(),
-    notes: submittedNotes,
-  );
-
-  final updatedReport = LostPetReport(
-    id: report.id,
-    petName: report.petName,
-    type: report.type,
-    lastSeenLocation: report.lastSeenLocation,
-    lastSeenDate: report.lastSeenDate,
-    notes: report.notes,
-    contactPhone: report.contactPhone,
-    isResolved: report.isResolved,
-    photoPath: report.photoPath,
-    latitude: report.latitude,
-    longitude: report.longitude,
-    createdAt: report.createdAt,
-    sightings: [
-      ...report.sightings,
-      newSighting,
-    ],
-  );
-
-  await _lostRepo.updateReport(updatedReport);
-
-  if (!mounted) return;
-
-  setState(() {
-    _lostReportsFuture = _loadLostReports();
-  });
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        isEl ? 'Η θέαση αποθηκεύτηκε.' : 'Sighting saved successfully.',
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   void _openMapPreviewScreen(List<LostPetReport> lostReports) {
     Navigator.push(
@@ -694,147 +695,74 @@ class _NewLostAlertBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final distanceText = _distanceText();
 
-    final String title = nearbyCount == 1
-        ? (isEl ? 'ΝΕΑ ΑΠΩΛΕΙΑ ΚΟΝΤΑ ΣΟΥ!' : 'NEW LOST PET NEAR YOU!')
-        : (isEl ? 'ΝΕΕΣ ΑΠΩΛΕΙΕΣ ΚΟΝΤΑ ΣΟΥ!' : 'NEW LOST PETS NEAR YOU!');
-
-    final String subtitle = nearbyCount == 1
-        ? distanceText != null
-            ? (isEl
-                ? 'Το $_petName δηλώθηκε πριν λίγο • $distanceText'
-                : '$_petName has just been reported nearby • $distanceText')
-            : (isEl
-                ? 'Το $_petName δηλώθηκε πριν λίγο κοντά σου.'
-                : '$_petName has just been reported nearby.')
-        : distanceText != null
-            ? (isEl
-                ? '$nearbyCount νέες απώλειες κοντά σου • η πιο κοντινή είναι $distanceText'
-                : '$nearbyCount new lost pets nearby • nearest is $distanceText')
-            : (isEl
-                ? '$nearbyCount νέες απώλειες δηλώθηκαν κοντά σου.'
-                : '$nearbyCount new lost pets have just been reported nearby.');
-
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
           colors: [
             Color(0xFFF44336),
-            Color(0xFFF45C2C),
             Color(0xFFFFA726),
           ],
         ),
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.10),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(22),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                height: 56,
-                width: 56,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Icon(
-                  Icons.notifications_active_rounded,
-                  color: Colors.white,
-                  size: 30,
-                ),
-              ),
-              Positioned(
-                right: 0,
-                top: 2,
-                child: Container(
-                  constraints: const BoxConstraints(
-                    minWidth: 24,
-                    minHeight: 24,
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '$nearbyCount',
-                      style: const TextStyle(
-                        color: AppTheme.lostFound,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          Container(
+            height: 44,
+            width: 44,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.notifications, color: Colors.white),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  isEl ? 'ΝΕΕΣ ΑΠΩΛΕΙΕΣ ΚΟΝΤΑ ΣΟΥ!' : 'NEW LOST PETS NEAR YOU!',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.96),
-                    fontSize: 15,
-                    height: 1.25,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                InkWell(
-                  onTap: onTap,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.94),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          isEl ? 'Προβολή' : 'View Alert',
-                          style: const TextStyle(
-                            color: AppTheme.primaryTeal,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          color: AppTheme.primaryTeal,
-                        ),
-                      ],
-                    ),
+                  distanceText ??
+                      (isEl
+                          ? '$nearbyCount νέες απώλειες κοντά σου'
+                          : '$nearbyCount new lost pets nearby'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
                   ),
                 ),
               ],
+            ),
+          ),
+          InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 8,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                isEl ? 'Προβολή' : 'View',
+                style: const TextStyle(
+                  color: AppTheme.primaryTeal,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
         ],
@@ -856,171 +784,90 @@ class _ActiveLostAlertsBanner extends StatelessWidget {
 
   String get _subtitle {
     if (activeCount == 0) {
-      return isEl
-          ? 'Δεν υπάρχουν ενεργές απώλειες τώρα'
-          : 'No active lost reports right now';
+      return isEl ? 'Δεν υπάρχουν ενεργές απώλειες' : 'No active lost reports';
     }
     if (activeCount == 1) {
-      return isEl
-          ? '1 ζώο αγνοείται αυτή τη στιγμή κοντά σου'
-          : '1 pet currently missing near you';
+      return isEl ? '1 ζώο αγνοείται κοντά σου' : '1 pet missing near you';
     }
     return isEl
-        ? '$activeCount ζώα αγνοούνται αυτή τη στιγμή κοντά σου'
-        : '$activeCount pets currently missing near you';
+        ? '$activeCount ζώα αγνοούνται κοντά σου'
+        : '$activeCount pets missing near you';
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
           colors: [
             Color(0xFFF44336),
-            Color(0xFFF45C2C),
             Color(0xFFFFA726),
           ],
         ),
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.10),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(22),
       ),
-      child: Stack(
+      child: Row(
         children: [
-          Positioned(
-            right: 8,
-            top: 0,
-            child: Icon(
-              Icons.pets,
-              size: 30,
-              color: Colors.white.withOpacity(0.10),
+          Container(
+            height: 44,
+            width: 44,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.warning, color: Colors.white),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isEl ? 'ΕΝΕΡΓΕΣ ΑΠΩΛΕΙΕΣ' : 'ACTIVE LOST ALERTS',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _subtitle,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
           ),
-          Positioned(
-            right: 42,
-            top: 18,
-            child: Icon(
-              Icons.favorite_rounded,
-              size: 34,
-              color: Colors.white.withOpacity(0.08),
-            ),
-          ),
-          Positioned(
-            right: 88,
-            top: 12,
-            child: Icon(
-              Icons.pets,
-              size: 18,
-              color: Colors.white.withOpacity(0.10),
-            ),
-          ),
-          Positioned(
-            left: -20,
-            bottom: -28,
+          InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(999),
             child: Container(
-              width: 180,
-              height: 80,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 8,
+              ),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(999),
               ),
+              child: Row(
+                children: const [
+                  Icon(Icons.map, size: 16, color: AppTheme.primaryTeal),
+                  SizedBox(width: 4),
+                  Text(
+                    'Map',
+                    style: TextStyle(
+                      color: AppTheme.primaryTeal,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                height: 56,
-                width: 56,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Icon(
-                  Icons.warning_amber_rounded,
-                  color: Colors.white,
-                  size: 32,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isEl ? 'ΕΝΕΡΓΕΣ ΑΠΩΛΕΙΕΣ' : 'ACTIVE LOST ALERTS',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 15,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _subtitle,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.96),
-                        fontSize: 15,
-                        height: 1.25,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Material(
-                        color: Colors.white.withOpacity(0.94),
-                        borderRadius: BorderRadius.circular(999),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(999),
-                          onTap: onTap,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 12,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.location_on_outlined,
-                                  size: 18,
-                                  color: Color(0xFF5D5245),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  isEl ? 'Δες στον χάρτη' : 'See on map',
-                                  style: const TextStyle(
-                                    color: Color(0xFF3B3B3B),
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                const Icon(
-                                  Icons.chevron_right_rounded,
-                                  size: 18,
-                                  color: Color(0xFF3B3B3B),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ),
         ],
       ),
