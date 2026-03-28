@@ -108,13 +108,13 @@ class _LostPetReportDetailsScreenState
   }) {
     if (!_hasPhoto) {
       return Container(
-        height: height ?? 244,
+        height: height ?? 268,
         width: width ?? double.infinity,
         color: AppTheme.surface,
         child: const Center(
           child: Icon(
             Icons.pets,
-            size: 56,
+            size: 58,
             color: AppTheme.textSecondary,
           ),
         ),
@@ -125,7 +125,7 @@ class _LostPetReportDetailsScreenState
 
     Widget fallback() {
       return Container(
-        height: height ?? 244,
+        height: height ?? 268,
         width: width ?? double.infinity,
         color: AppTheme.surface,
         child: const Center(
@@ -157,12 +157,52 @@ class _LostPetReportDetailsScreenState
     );
   }
 
+  Widget _buildHeroImage() {
+    return Container(
+      height: 276,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.black.withOpacity(0.025),
+            Colors.transparent,
+          ],
+        ),
+      ),
+      child: !_hasPhoto
+          ? const Center(
+              child: Icon(
+                Icons.pets,
+                size: 64,
+                color: AppTheme.textSecondary,
+              ),
+            )
+          : Padding(
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 18),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  color: const Color(0xFFF4F1EA),
+                  child: SizedBox.expand(
+                    child: _buildReportImage(
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+
   void _openFullImage(BuildContext context) {
     if (!_hasPhoto) return;
 
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.9),
+      barrierColor: Colors.black.withOpacity(0.92),
       builder: (_) {
         return Dialog(
           backgroundColor: Colors.transparent,
@@ -421,15 +461,7 @@ Shared via Petbook
                     borderRadius: const BorderRadius.vertical(
                       bottom: Radius.circular(28),
                     ),
-                    child: SizedBox(
-                      height: 244,
-                      width: double.infinity,
-                      child: _buildReportImage(
-                        height: 244,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+                    child: _buildHeroImage(),
                   ),
                   Positioned(
                     left: 16,
@@ -464,7 +496,7 @@ Shared via Petbook
                       color: AppTheme.textSecondary.withOpacity(0.82),
                     ),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 16),
                   _MainCard(
                     padding: const EdgeInsets.all(14),
                     child: Column(
@@ -550,7 +582,7 @@ Shared via Petbook
                     ),
                   ],
                   if (_sortedSightings.isNotEmpty) ...[
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 16),
                     Row(
                       children: [
                         const Icon(
@@ -591,7 +623,7 @@ Shared via Petbook
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     ..._sortedSightings.map(
                       (sighting) => _SightingEntryCard(
                         isEl: isEl,
@@ -601,7 +633,7 @@ Shared via Petbook
                       ),
                     ),
                   ],
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 16),
                   _MainCard(
                     padding: const EdgeInsets.all(14),
                     child: Row(
@@ -649,7 +681,7 @@ Shared via Petbook
                       ],
                     ),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 16),
                   if (!isResolved) ...[
                     SizedBox(
                       width: double.infinity,
@@ -690,7 +722,7 @@ Shared via Petbook
                         ),
                       ),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 16),
                   ],
                   Text(
                     isEl ? 'Επικοινωνία' : 'Contact owner',
@@ -884,8 +916,8 @@ class _SightingEntryCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
       decoration: BoxDecoration(
         color: AppTheme.surface,
         borderRadius: BorderRadius.circular(18),
@@ -894,8 +926,8 @@ class _SightingEntryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.055),
-            blurRadius: 12,
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
@@ -947,20 +979,20 @@ class _SightingEntryCard extends StatelessWidget {
             ],
           ),
           if (hasNote) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.only(left: 40),
               child: Text(
                 sighting.notes.trim(),
                 style: const TextStyle(
                   color: AppTheme.textPrimary,
-                  height: 1.4,
+                  height: 1.38,
                   fontSize: 14,
                 ),
               ),
             ),
           ],
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.only(left: 40),
             child: Row(

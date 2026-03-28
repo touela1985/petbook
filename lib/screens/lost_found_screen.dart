@@ -695,72 +695,157 @@ class _NewLostAlertBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final distanceText = _distanceText();
 
+    final String title = nearbyCount == 1
+        ? (isEl ? 'ΝΕΑ ΑΠΩΛΕΙΑ ΚΟΝΤΑ ΣΟΥ!' : 'NEW LOST PET NEAR YOU!')
+        : (isEl ? 'ΝΕΕΣ ΑΠΩΛΕΙΕΣ ΚΟΝΤΑ ΣΟΥ!' : 'NEW LOST PETS NEAR YOU!');
+
+    final String subtitle = nearbyCount == 1
+        ? distanceText != null
+            ? (isEl
+                ? 'Το $_petName δηλώθηκε πριν λίγο • $distanceText'
+                : '$_petName has just been reported nearby • $distanceText')
+            : (isEl
+                ? 'Το $_petName δηλώθηκε πριν λίγο κοντά σου.'
+                : '$_petName has just been reported nearby.')
+        : distanceText != null
+            ? (isEl
+                ? '$nearbyCount νέες απώλειες κοντά σου • η πιο κοντινή είναι $distanceText'
+                : '$nearbyCount new lost pets nearby • nearest is $distanceText')
+            : (isEl
+                ? '$nearbyCount νέες απώλειες δηλώθηκαν κοντά σου.'
+                : '$nearbyCount new lost pets have just been reported nearby.');
+
     return Container(
+      constraints: const BoxConstraints(minHeight: 92),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
             Color(0xFFF44336),
             Color(0xFFFFA726),
           ],
         ),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Container(
-            height: 44,
-            width: 44,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(Icons.notifications, color: Colors.white),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                height: 54,
+                width: 54,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.notifications_active_rounded,
+                  color: Colors.white,
+                  size: 29,
+                ),
+              ),
+              Positioned(
+                right: -4,
+                top: -4,
+                child: Container(
+                  constraints: const BoxConstraints(
+                    minWidth: 23,
+                    minHeight: 23,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$nearbyCount',
+                      style: const TextStyle(
+                        color: AppTheme.lostFound,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isEl ? 'ΝΕΕΣ ΑΠΩΛΕΙΕΣ ΚΟΝΤΑ ΣΟΥ!' : 'NEW LOST PETS NEAR YOU!',
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14.5,
+                    height: 1.1,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 5),
                 Text(
-                  distanceText ??
-                      (isEl
-                          ? '$nearbyCount νέες απώλειες κοντά σου'
-                          : '$nearbyCount new lost pets nearby'),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
+                  subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.96),
+                    fontSize: 13.5,
+                    height: 1.25,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
-          InkWell(
-            onTap: onTap,
+          const SizedBox(width: 12),
+          Material(
+            color: Colors.white.withOpacity(0.96),
             borderRadius: BorderRadius.circular(999),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 8,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                isEl ? 'Προβολή' : 'View',
-                style: const TextStyle(
-                  color: AppTheme.primaryTeal,
-                  fontWeight: FontWeight.w700,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(999),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isEl ? 'Προβολή' : 'View',
+                      style: const TextStyle(
+                        color: AppTheme.primaryTeal,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 18,
+                      color: AppTheme.primaryTeal,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -797,75 +882,104 @@ class _ActiveLostAlertsBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: const BoxConstraints(minHeight: 92),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
             Color(0xFFF44336),
             Color(0xFFFFA726),
           ],
         ),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            height: 44,
-            width: 44,
+            height: 54,
+            width: 54,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(14),
+              color: Colors.white.withOpacity(0.18),
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(Icons.warning, color: Colors.white),
+            child: const Icon(
+              Icons.warning_amber_rounded,
+              color: Colors.white,
+              size: 30,
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   isEl ? 'ΕΝΕΡΓΕΣ ΑΠΩΛΕΙΕΣ' : 'ACTIVE LOST ALERTS',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14.5,
+                    height: 1.1,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 5),
                 Text(
                   _subtitle,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.96),
+                    fontSize: 13.5,
+                    height: 1.25,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
-          InkWell(
-            onTap: onTap,
+          const SizedBox(width: 12),
+          Material(
+            color: Colors.white.withOpacity(0.96),
             borderRadius: BorderRadius.circular(999),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 8,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Row(
-                children: const [
-                  Icon(Icons.map, size: 16, color: AppTheme.primaryTeal),
-                  SizedBox(width: 4),
-                  Text(
-                    'Map',
-                    style: TextStyle(
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(999),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.map_outlined,
+                      size: 18,
                       color: AppTheme.primaryTeal,
-                      fontWeight: FontWeight.w700,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 6),
+                    Text(
+                      isEl ? 'Χάρτης' : 'Map',
+                      style: const TextStyle(
+                        color: AppTheme.primaryTeal,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -979,11 +1093,11 @@ class _ReportThumbnail extends StatelessWidget {
 
     Widget fallback() {
       return Container(
-        height: 88,
-        width: 88,
+        height: 92,
+        width: 92,
         decoration: BoxDecoration(
           color: accentColor.withOpacity(0.10),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Icon(
           Icons.pets,
@@ -1001,18 +1115,25 @@ class _ReportThumbnail extends StatelessWidget {
 
     Widget framed(Widget child) {
       return Container(
-        height: 88,
-        width: 88,
+        height: 92,
+        width: 92,
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
           color: accentColor.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: accentColor.withOpacity(0.16),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(17),
           child: child,
         ),
       );
@@ -1062,23 +1183,26 @@ class _ActionPillButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: OutlinedButton.icon(
-        onPressed: onTap,
-        icon: Icon(icon, size: 18),
-        label: Text(label),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: color,
-          side: BorderSide(
-            color: color.withOpacity(0.22),
-          ),
-          backgroundColor: color.withOpacity(0.04),
-          padding: const EdgeInsets.symmetric(vertical: 11),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          textStyle: const TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 13,
+      child: SizedBox(
+        height: 52,
+        child: OutlinedButton.icon(
+          onPressed: onTap,
+          icon: Icon(icon, size: 18),
+          label: Text(label),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: color,
+            side: BorderSide(
+              color: color.withOpacity(0.22),
+            ),
+            backgroundColor: color.withOpacity(0.04),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+            ),
           ),
         ),
       ),
@@ -1207,12 +1331,13 @@ Shared via Petbook
                       photoPath: report.photoPath,
                       accentColor: AppTheme.lostFound,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               _StatusBadge(
                                 label: report.isResolved
@@ -1244,18 +1369,19 @@ Shared via Petbook
                               ),
                             ],
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 8),
                           Text(
                             report.petName.trim().isEmpty
                                 ? (isEl ? 'Χαμένο ζώο' : 'Lost pet')
                                 : report.petName.trim(),
                             style: const TextStyle(
                               fontSize: 20,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w900,
                               color: AppTheme.textPrimary,
+                              height: 1.1,
                             ),
                           ),
-                          const SizedBox(height: 7),
+                          const SizedBox(height: 8),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1271,25 +1397,18 @@ Shared via Petbook
                               Expanded(
                                 child: Text(
                                   report.lastSeenLocation,
-                                  style: const TextStyle(
-                                    color: AppTheme.textSecondary,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color:
+                                        AppTheme.textSecondary.withOpacity(0.9),
                                     height: 1.3,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                          if (hasPhone) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              isEl
-                                  ? 'Επικοινωνία: ${report.contactPhone}'
-                                  : 'Contact: ${report.contactPhone}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ),
@@ -1343,6 +1462,7 @@ Shared via Petbook
                 const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
+                  height: 52,
                   child: OutlinedButton.icon(
                     onPressed: onSightingTap,
                     icon: const Icon(Icons.remove_red_eye_outlined),
@@ -1350,12 +1470,14 @@ Shared via Petbook
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.primaryTeal,
                       side: BorderSide(
-                        color: AppTheme.primaryTeal.withOpacity(0.22),
+                        color: AppTheme.primaryTeal.withOpacity(0.28),
                       ),
                       backgroundColor: const Color(0xFFEAF7F5),
+                      elevation: 1,
+                      shadowColor: Colors.black.withOpacity(0.05),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       textStyle: const TextStyle(
                         fontWeight: FontWeight.w800,
