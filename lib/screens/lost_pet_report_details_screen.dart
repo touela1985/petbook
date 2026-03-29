@@ -646,7 +646,8 @@ Shared via Petbook
                     const SizedBox(height: 8),
                     ..._sortedSightings.map((sighting) {
                       final hasSightingCoordinates =
-                          sighting.latitude != null && sighting.longitude != null;
+                          sighting.latitude != null &&
+                              sighting.longitude != null;
 
                       final locationLabel = hasSightingCoordinates
                           ? _formatCoordinates(
@@ -738,9 +739,7 @@ Shared via Petbook
                               ? (isEl
                                   ? 'Κλείσιμο ειδοποίησης...'
                                   : 'Closing alert...')
-                              : (isEl
-                                  ? 'Σήμανση ως βρέθηκε'
-                                  : 'Mark as Found'),
+                              : (isEl ? 'Σήμανση ως βρέθηκε' : 'Mark as Found'),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primaryTeal,
@@ -953,12 +952,13 @@ class _SightingEntryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasNote = sighting.notes.trim().isNotEmpty;
-    final hasLocation = locationLabel != null && locationLabel!.trim().isNotEmpty;
+    final hasLocation =
+        locationLabel != null && locationLabel!.trim().isNotEmpty;
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
         color: AppTheme.surface,
         borderRadius: BorderRadius.circular(18),
@@ -967,7 +967,7 @@ class _SightingEntryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -977,127 +977,117 @@ class _SightingEntryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                height: 30,
-                width: 30,
+                height: 26,
+                width: 26,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryTeal.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(10),
+                  color: AppTheme.primaryTeal.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.remove_red_eye_outlined,
-                  size: 17,
+                  size: 15,
                   color: AppTheme.primaryTeal,
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 14),
               Expanded(
-                child: Text(
-                  isEl ? 'Θέαση' : 'Sighting',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14.5,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-              ),
-              IconButton(
-                onPressed: onDelete,
-                tooltip: isEl ? 'Διαγραφή' : 'Delete',
-                splashRadius: 18,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minHeight: 34,
-                  minWidth: 34,
-                ),
-                icon: const Icon(
-                  Icons.delete_outline_rounded,
-                  color: AppTheme.textSecondary,
-                  size: 20,
-                ),
-              ),
-            ],
-          ),
-          if (hasNote) ...[
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.only(left: 40),
-              child: Text(
-                sighting.notes.trim(),
-                style: const TextStyle(
-                  color: AppTheme.textPrimary,
-                  height: 1.38,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ],
-          if (hasLocation) ...[
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.only(left: 40),
-              child: InkWell(
-                onTap: onOpenMap,
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on_outlined,
-                        size: 16,
-                        color: AppTheme.primaryTeal,
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          locationLabel!,
-                          style: TextStyle(
-                            color: onOpenMap != null
-                                ? AppTheme.primaryTeal
-                                : AppTheme.textSecondary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            height: 1.3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (hasLocation)
+                      InkWell(
+                        onTap: onOpenMap,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.location_on_outlined,
+                                size: 16,
+                                color: AppTheme.primaryTeal,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  locationLabel!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    color: AppTheme.primaryTeal,
+                                    fontSize: 13.8,
+                                  ),
+                                ),
+                              ),
+                              if (onOpenMap != null) ...[
+                                const SizedBox(width: 6),
+                                const Icon(
+                                  Icons.open_in_new_rounded,
+                                  size: 17,
+                                  color: AppTheme.primaryTeal,
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                       ),
-                      if (onOpenMap != null) ...[
+                    if (hasNote) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        sighting.notes.trim(),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppTheme.textPrimary.withOpacity(0.78),
+                          height: 1.35,
+                          fontSize: 13.2,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.schedule_rounded,
+                          size: 13,
+                          color: AppTheme.textSecondary.withOpacity(0.6),
+                        ),
                         const SizedBox(width: 6),
-                        const Icon(
-                          Icons.open_in_new_rounded,
-                          size: 16,
-                          color: AppTheme.primaryTeal,
+                        Text(
+                          formattedDateTime,
+                          style: TextStyle(
+                            color: AppTheme.textSecondary.withOpacity(0.6),
+                            fontSize: 11.8,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.only(left: 40),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.schedule_rounded,
-                  size: 14,
-                  color: AppTheme.textSecondary,
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: onDelete,
+                splashRadius: 18,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minHeight: 32,
+                  minWidth: 32,
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  formattedDateTime,
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+                icon: Icon(
+                  Icons.delete_outline_rounded,
+                  size: 18,
+                  color: AppTheme.textSecondary.withOpacity(0.6),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
