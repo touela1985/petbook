@@ -4,10 +4,15 @@ class LostPetSighting {
   final String notes;
   final DateTime createdAt;
 
+  final double? latitude;
+  final double? longitude;
+
   LostPetSighting({
     required this.id,
     required this.location,
     required this.notes,
+    this.latitude,
+    this.longitude,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -16,6 +21,8 @@ class LostPetSighting {
       'id': id,
       'location': location,
       'notes': notes,
+      'latitude': latitude,
+      'longitude': longitude,
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -25,6 +32,8 @@ class LostPetSighting {
       id: json['id'],
       location: json['location'] ?? '',
       notes: json['notes'] ?? '',
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),

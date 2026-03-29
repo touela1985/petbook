@@ -66,6 +66,10 @@ class _LostPetReportDetailsScreenState
     return '$formattedDate • $hour:$minute';
   }
 
+  String _formatCoordinates(double latitude, double longitude) {
+    return '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}';
+  }
+
   bool get _isEl => Localizations.localeOf(context).languageCode == 'el';
 
   bool get _hasCoordinates =>
@@ -249,6 +253,22 @@ class _LostPetReportDetailsScreenState
           petName: _displayPetName,
           latitude: _report.latitude!,
           longitude: _report.longitude!,
+        ),
+      ),
+    );
+  }
+
+  void _openSightingMapScreen(LostPetSighting sighting) {
+    if (sighting.latitude == null || sighting.longitude == null) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _LostReportMapScreen(
+          isEl: _isEl,
+          petName: _isEl ? 'Θέαση' : 'Sighting',
+          latitude: sighting.latitude!,
+          longitude: sighting.longitude!,
         ),
       ),
     );
@@ -624,14 +644,30 @@ Shared via Petbook
                       ],
                     ),
                     const SizedBox(height: 8),
-                    ..._sortedSightings.map(
-                      (sighting) => _SightingEntryCard(
+                    ..._sortedSightings.map((sighting) {
+                      final hasSightingCoordinates =
+                          sighting.latitude != null && sighting.longitude != null;
+
+                      final locationLabel = hasSightingCoordinates
+                          ? _formatCoordinates(
+                              sighting.latitude!,
+                              sighting.longitude!,
+                            )
+                          : sighting.location.trim().isNotEmpty
+                              ? sighting.location.trim()
+                              : null;
+
+                      return _SightingEntryCard(
                         isEl: isEl,
                         sighting: sighting,
                         formattedDateTime: _formatDateTime(sighting.createdAt),
+                        locationLabel: locationLabel,
+                        onOpenMap: hasSightingCoordinates
+                            ? () => _openSightingMapScreen(sighting)
+                            : null,
                         onDelete: () => _deleteSighting(sighting),
-                      ),
-                    ),
+                      );
+                    }),
                   ],
                   const SizedBox(height: 16),
                   _MainCard(
@@ -901,18 +937,23 @@ class _SightingEntryCard extends StatelessWidget {
   final bool isEl;
   final LostPetSighting sighting;
   final String formattedDateTime;
+  final String? locationLabel;
+  final VoidCallback? onOpenMap;
   final VoidCallback onDelete;
 
   const _SightingEntryCard({
     required this.isEl,
     required this.sighting,
     required this.formattedDateTime,
+    required this.locationLabel,
+    required this.onOpenMap,
     required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
     final hasNote = sighting.notes.trim().isNotEmpty;
+    final hasLocation = locationLabel != null && locationLabel!.trim().isNotEmpty;
 
     return Container(
       width: double.infinity,
@@ -988,6 +1029,50 @@ class _SightingEntryCard extends StatelessWidget {
                   color: AppTheme.textPrimary,
                   height: 1.38,
                   fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+          if (hasLocation) ...[
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(left: 40),
+              child: InkWell(
+                onTap: onOpenMap,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on_outlined,
+                        size: 16,
+                        color: AppTheme.primaryTeal,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          locationLabel!,
+                          style: TextStyle(
+                            color: onOpenMap != null
+                                ? AppTheme.primaryTeal
+                                : AppTheme.textSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                      if (onOpenMap != null) ...[
+                        const SizedBox(width: 6),
+                        const Icon(
+                          Icons.open_in_new_rounded,
+                          size: 16,
+                          color: AppTheme.primaryTeal,
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             ),

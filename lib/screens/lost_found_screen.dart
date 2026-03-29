@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
@@ -176,11 +177,25 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
     await _refreshScreen();
   }
 
+  String _formatCoordinateLabel(double latitude, double longitude) {
+    return '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}';
+  }
+
   Future<void> _openSightingDialog(LostPetReport report) async {
     final isEl = Localizations.localeOf(context).languageCode == 'el';
-    String typedNotes = '';
 
-    final String? submittedNotes = await showModalBottomSheet<String>(
+    final LatLng initialTarget =
+        (report.latitude != null && report.longitude != null)
+            ? LatLng(report.latitude!, report.longitude!)
+            : _userPosition != null
+                ? LatLng(_userPosition!.latitude, _userPosition!.longitude)
+                : const LatLng(36.8926, 27.2877);
+
+    String typedNotes = '';
+    LatLng selectedLatLng = initialTarget;
+
+    final Map<String, dynamic>? result =
+        await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -189,121 +204,179 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
         final media = MediaQuery.of(sheetContext);
         final bottomInset = media.viewInsets.bottom;
 
-        return SafeArea(
-          top: false,
-          child: AnimatedPadding(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOut,
-            padding: EdgeInsets.fromLTRB(
-              16,
-              8,
-              16,
-              bottomInset > 0 ? bottomInset + 12 : media.padding.bottom + 12,
-            ),
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Material(
-                color: Colors.transparent,
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isEl ? 'Δήλωση θέασης' : 'Report Sighting',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.textPrimary,
-                        ),
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SafeArea(
+              top: false,
+              child: AnimatedPadding(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  8,
+                  16,
+                  bottomInset > 0
+                      ? bottomInset + 12
+                      : media.padding.bottom + 12,
+                ),
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Container(
+                      constraints: BoxConstraints(
+                        maxHeight: media.size.height * 0.82,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        isEl
-                            ? 'Μοιράσου γρήγορα μια πληροφορία αν είδες αυτό το ζώο.'
-                            : 'Quickly share a helpful update if you saw this pet.',
-                        style: const TextStyle(
-                          color: AppTheme.textSecondary,
-                          height: 1.35,
-                        ),
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(28),
                       ),
-                      const SizedBox(height: 14),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F8F7),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: AppTheme.border),
-                        ),
+                      child: SingleChildScrollView(
                         child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Text(
+                              isEl ? 'Δήλωση θέασης' : 'Report Sighting',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              isEl
+                                  ? 'Πάτησε πάνω στον χάρτη για να διαλέξεις το ακριβές σημείο και γράψε προαιρετικά μια σημείωση.'
+                                  : 'Tap on the map to pick the exact sighting point and add an optional note.',
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                height: 1.35,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
                             Container(
-                              height: 110,
                               width: double.infinity,
+                              padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(14),
-                                gradient: const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Color(0xFFEAF7F5),
-                                    Color(0xFFF5FBFA),
-                                  ],
-                                ),
+                                color: const Color(0xFFF1F8F7),
+                                borderRadius: BorderRadius.circular(18),
                                 border: Border.all(color: AppTheme.border),
                               ),
-                              child: Stack(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Positioned.fill(
-                                    child: Opacity(
-                                      opacity: 0.18,
-                                      child: CustomPaint(
-                                        painter: _MiniMapPainter(),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: SizedBox(
+                                      height: 170,
+                                      width: double.infinity,
+                                      child: GoogleMap(
+                                        initialCameraPosition: CameraPosition(
+                                          target: initialTarget,
+                                          zoom: (report.latitude != null &&
+                                                  report.longitude != null)
+                                              ? 16
+                                              : 13,
+                                        ),
+                                        myLocationButtonEnabled: false,
+                                        zoomControlsEnabled: false,
+                                        mapToolbarEnabled: false,
+                                        onTap: (latLng) {
+                                          setModalState(() {
+                                            selectedLatLng = latLng;
+                                          });
+                                        },
+                                        markers: {
+                                          Marker(
+                                            markerId: const MarkerId(
+                                              'selected_sighting_location',
+                                            ),
+                                            position: selectedLatLng,
+                                          ),
+                                        },
                                       ),
                                     ),
                                   ),
-                                  const Center(
-                                    child: Icon(
-                                      Icons.location_on_rounded,
-                                      size: 42,
-                                      color: AppTheme.primaryTeal,
-                                    ),
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Padding(
+                                        padding: EdgeInsets.only(top: 2),
+                                        child: Icon(
+                                          Icons.place_outlined,
+                                          size: 18,
+                                          color: AppTheme.primaryTeal,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          '${selectedLatLng.latitude.toStringAsFixed(5)}, ${selectedLatLng.longitude.toStringAsFixed(5)}',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            color: AppTheme.textPrimary,
+                                            height: 1.3,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 14),
+                            TextField(
+                              maxLines: 3,
+                              textInputAction: TextInputAction.done,
+                              onChanged: (value) {
+                                typedNotes = value;
+                              },
+                              decoration: InputDecoration(
+                                labelText: isEl
+                                    ? 'Σημειώσεις (προαιρετικό)'
+                                    : 'Notes (optional)',
+                                hintText: isEl
+                                    ? 'Π.χ. το είδα να κινείται προς το πάρκο'
+                                    : 'e.g. I saw it moving toward the park',
+                              ),
+                            ),
+                            const SizedBox(height: 16),
                             Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Padding(
-                                  padding: EdgeInsets.only(top: 2),
-                                  child: Icon(
-                                    Icons.place_outlined,
-                                    size: 18,
-                                    color: AppTheme.primaryTeal,
+                                Expanded(
+                                  child: TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(sheetContext).pop(),
+                                    child: Text(isEl ? 'Άκυρο' : 'Cancel'),
                                   ),
                                 ),
-                                const SizedBox(width: 6),
+                                const SizedBox(width: 12),
                                 Expanded(
-                                  child: Text(
-                                    report.lastSeenLocation.trim().isEmpty
-                                        ? (isEl
-                                            ? 'Δεν υπάρχει καταχωρημένη τοποθεσία'
-                                            : 'No saved location')
-                                        : report.lastSeenLocation,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTheme.textPrimary,
-                                      height: 1.3,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      FocusScope.of(sheetContext).unfocus();
+                                      Navigator.of(sheetContext).pop({
+                                        'notes': typedNotes.trim(),
+                                        'latitude': selectedLatLng.latitude,
+                                        'longitude': selectedLatLng.longitude,
+                                      });
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.primaryTeal,
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
                                     ),
+                                    child: Text(isEl ? 'Υποβολή' : 'Submit'),
                                   ),
                                 ),
                               ],
@@ -311,70 +384,29 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 14),
-                      TextField(
-                        maxLines: 3,
-                        textInputAction: TextInputAction.done,
-                        onChanged: (value) {
-                          typedNotes = value;
-                        },
-                        decoration: InputDecoration(
-                          labelText: isEl
-                              ? 'Σημειώσεις (προαιρετικό)'
-                              : 'Notes (optional)',
-                          hintText: isEl
-                              ? 'Π.χ. το είδα κοντά στο λιμάνι πριν λίγο'
-                              : 'e.g. I saw it near the harbor a few minutes ago',
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextButton(
-                              onPressed: () => Navigator.of(sheetContext).pop(),
-                              child: Text(isEl ? 'Άκυρο' : 'Cancel'),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                FocusScope.of(sheetContext).unfocus();
-                                Navigator.of(sheetContext)
-                                    .pop(typedNotes.trim());
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.primaryTeal,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                              ),
-                              child: Text(isEl ? 'Υποβολή' : 'Submit'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
 
-    if (submittedNotes == null) return;
+    if (result == null) return;
+
+    final double latitude = (result['latitude'] as num).toDouble();
+    final double longitude = (result['longitude'] as num).toDouble();
+    final String submittedNotes = (result['notes'] as String?) ?? '';
 
     final newSighting = LostPetSighting(
       id: _uuid.v4(),
-      location: report.lastSeenLocation.trim(),
+      location:
+          '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}',
       notes: submittedNotes,
+      latitude: latitude,
+      longitude: longitude,
     );
 
     final updatedReport = LostPetReport(
