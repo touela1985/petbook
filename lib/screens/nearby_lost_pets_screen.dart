@@ -1,11 +1,9 @@
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../models/lost_pet_report.dart';
 import '../theme/app_theme.dart';
+import '../widgets/pet_image_widget.dart';
 import 'lost_pet_report_details_screen.dart';
 
 class NearbyLostPetsScreen extends StatelessWidget {
@@ -79,11 +77,14 @@ class NearbyLostPetsScreen extends StatelessWidget {
   }
 
   Widget _buildThumbnail(LostPetReport report) {
-    final photoPath = report.photoPath;
-    final hasPhoto = photoPath != null && photoPath.trim().isNotEmpty;
-
-    Widget fallback() {
-      return Container(
+    return PetImageWidget(
+      photoUrl: report.photoUrl,
+      photoPath: report.photoPath,
+      width: 92,
+      height: 92,
+      fit: BoxFit.cover,
+      borderRadius: BorderRadius.circular(18),
+      placeholder: Container(
         height: 92,
         width: 92,
         decoration: BoxDecoration(
@@ -95,40 +96,6 @@ class NearbyLostPetsScreen extends StatelessWidget {
           color: AppTheme.lostFound,
           size: 34,
         ),
-      );
-    }
-
-    if (!hasPhoto) return fallback();
-
-    final path = photoPath.trim();
-
-    if (kIsWeb) {
-      final uri = Uri.tryParse(path);
-      final isValidWebImage =
-          uri != null && uri.hasScheme && uri.host.isNotEmpty;
-
-      if (!isValidWebImage) return fallback();
-
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: Image.network(
-          path,
-          height: 92,
-          width: 92,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => fallback(),
-        ),
-      );
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: Image.file(
-        File(path),
-        height: 92,
-        width: 92,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => fallback(),
       ),
     );
   }

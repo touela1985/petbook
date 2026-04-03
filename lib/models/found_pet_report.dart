@@ -7,6 +7,7 @@ class FoundPetReport {
   final String contactPhone;
   final bool isResolved;
   final String? photoPath;
+  final String? photoUrl;
   final double? latitude;
   final double? longitude;
 
@@ -19,6 +20,7 @@ class FoundPetReport {
     required this.contactPhone,
     required this.isResolved,
     this.photoPath,
+    this.photoUrl,
     this.latitude,
     this.longitude,
   });
@@ -33,6 +35,7 @@ class FoundPetReport {
       'contactPhone': contactPhone,
       'isResolved': isResolved,
       'photoPath': photoPath,
+      'photoUrl': photoUrl,
       'latitude': latitude,
       'longitude': longitude,
     };
@@ -48,6 +51,7 @@ class FoundPetReport {
       contactPhone: json['contactPhone'],
       isResolved: json['isResolved'] ?? false,
       photoPath: json['photoPath'],
+      photoUrl: json['photoUrl'] as String?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
     );

@@ -3,24 +3,28 @@ class CommunityPlace {
   final String title;
   final String description;
   final String? imagePath;
+  final String? imageUrl;
 
   CommunityPlace({
     required this.id,
     required this.title,
     required this.description,
     required this.imagePath,
+    this.imageUrl,
   });
 
   factory CommunityPlace.create({
     required String title,
     required String description,
     String? imagePath,
+    String? imageUrl,
   }) {
     return CommunityPlace(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       title: title,
       description: description,
       imagePath: imagePath,
+      imageUrl: imageUrl,
     );
   }
 
@@ -29,12 +33,14 @@ class CommunityPlace {
     String? title,
     String? description,
     String? imagePath,
+    String? imageUrl,
   }) {
     return CommunityPlace(
       id: id ?? this.id,
       title: title ?? this.title,
       description: description ?? this.description,
       imagePath: imagePath ?? this.imagePath,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 
@@ -44,6 +50,7 @@ class CommunityPlace {
       'title': title,
       'description': description,
       'imagePath': imagePath,
+      'imageUrl': imageUrl,
     };
   }
 
@@ -53,6 +60,7 @@ class CommunityPlace {
       title: json['title'] as String,
       description: json['description'] as String,
       imagePath: json['imagePath'] as String?,
+      imageUrl: json['imageUrl'] as String?,
     );
   }
 }

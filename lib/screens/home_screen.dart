@@ -1,9 +1,8 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 
 import '../data/lost_pet_report_repository.dart';
 import '../data/pet_repository.dart';
+import '../widgets/pet_image_widget.dart';
 import '../l10n/app_localizations.dart';
 import '../models/pet.dart';
 import '../theme/app_theme.dart';
@@ -1272,31 +1271,25 @@ class _PetMiniCard extends StatelessWidget {
   }
 
   Widget _buildPetPhoto() {
-    if (pet.photoBase64 != null && pet.photoBase64!.isNotEmpty) {
-      final bytes = base64Decode(pet.photoBase64!);
-
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: Image.memory(
-          bytes,
-          height: 132,
-          width: double.infinity,
-          fit: BoxFit.contain,
-        ),
-      );
-    }
-
-    return Container(
+    return PetImageWidget(
+      photoUrl: pet.photoUrl,
+      photoBase64: pet.photoBase64,
       height: 132,
       width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppTheme.primaryTeal.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: const Icon(
-        Icons.pets,
-        color: AppTheme.primaryTeal,
-        size: 40,
+      fit: BoxFit.contain,
+      borderRadius: BorderRadius.circular(18),
+      placeholder: Container(
+        height: 132,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AppTheme.primaryTeal.withOpacity(0.10),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: const Icon(
+          Icons.pets,
+          color: AppTheme.primaryTeal,
+          size: 40,
+        ),
       ),
     );
   }

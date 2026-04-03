@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -13,6 +11,7 @@ import '../data/lost_pet_report_repository.dart';
 import '../models/found_pet_report.dart';
 import '../models/lost_pet_report.dart';
 import '../theme/app_theme.dart';
+import '../widgets/pet_image_widget.dart';
 import 'add_found_pet_report_screen.dart';
 import 'add_lost_pet_report_screen.dart';
 import 'found_pet_report_details_screen.dart';
@@ -419,6 +418,7 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
       contactPhone: report.contactPhone,
       isResolved: report.isResolved,
       photoPath: report.photoPath,
+      photoUrl: report.photoUrl,
       latitude: report.latitude,
       longitude: report.longitude,
       createdAt: report.createdAt,
@@ -1112,17 +1112,17 @@ class _DistanceBadge extends StatelessWidget {
 
 class _ReportThumbnail extends StatelessWidget {
   final String? photoPath;
+  final String? photoUrl;
   final Color accentColor;
 
   const _ReportThumbnail({
     required this.photoPath,
     required this.accentColor,
+    this.photoUrl,
   });
 
   @override
   Widget build(BuildContext context) {
-    final hasPhoto = photoPath != null && photoPath!.trim().isNotEmpty;
-
     Widget fallback() {
       return Container(
         height: 92,
@@ -1139,61 +1139,32 @@ class _ReportThumbnail extends StatelessWidget {
       );
     }
 
-    if (!hasPhoto) {
+    if (!hasAnyImage(photoUrl: photoUrl, photoPath: photoPath)) {
       return fallback();
     }
 
-    final path = photoPath!.trim();
-
-    Widget framed(Widget child) {
-      return Container(
-        height: 92,
-        width: 92,
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          color: accentColor.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: accentColor.withOpacity(0.16),
+    return Container(
+      height: 92,
+      width: 92,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: accentColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: accentColor.withOpacity(0.16)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(17),
-          child: child,
-        ),
-      );
-    }
-
-    if (kIsWeb) {
-      final uri = Uri.tryParse(path);
-      final isValidWebImage =
-          uri != null && uri.hasScheme && uri.host.isNotEmpty;
-
-      if (!isValidWebImage) {
-        return fallback();
-      }
-
-      return framed(
-        Image.network(
-          path,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => fallback(),
-        ),
-      );
-    }
-
-    return framed(
-      Image.file(
-        File(path),
+        ],
+      ),
+      child: PetImageWidget(
+        photoUrl: photoUrl,
+        photoPath: photoPath,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => fallback(),
+        borderRadius: BorderRadius.circular(17),
+        placeholder: fallback(),
       ),
     );
   }
@@ -1360,6 +1331,7 @@ Shared via Petbook
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _ReportThumbnail(
+                      photoUrl: report.photoUrl,
                       photoPath: report.photoPath,
                       accentColor: AppTheme.lostFound,
                     ),
@@ -1625,6 +1597,7 @@ Shared via Petbook
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _ReportThumbnail(
+                      photoUrl: report.photoUrl,
                       photoPath: report.photoPath,
                       accentColor: AppTheme.primaryTeal,
                     ),

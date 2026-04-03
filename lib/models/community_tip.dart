@@ -4,6 +4,7 @@ class CommunityTip {
   final String title;
   final String body;
   final String? imagePath;
+  final String? imageUrl;
 
   CommunityTip({
     required this.id,
@@ -11,6 +12,7 @@ class CommunityTip {
     required this.title,
     required this.body,
     required this.imagePath,
+    this.imageUrl,
   });
 
   factory CommunityTip.create({
@@ -18,6 +20,7 @@ class CommunityTip {
     required String title,
     required String body,
     String? imagePath,
+    String? imageUrl,
   }) {
     return CommunityTip(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -25,6 +28,7 @@ class CommunityTip {
       title: title,
       body: body,
       imagePath: imagePath,
+      imageUrl: imageUrl,
     );
   }
 
@@ -34,6 +38,7 @@ class CommunityTip {
     String? title,
     String? body,
     String? imagePath,
+    String? imageUrl,
   }) {
     return CommunityTip(
       id: id ?? this.id,
@@ -41,6 +46,7 @@ class CommunityTip {
       title: title ?? this.title,
       body: body ?? this.body,
       imagePath: imagePath ?? this.imagePath,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 
@@ -51,6 +57,7 @@ class CommunityTip {
       'title': title,
       'body': body,
       'imagePath': imagePath,
+      'imageUrl': imageUrl,
     };
   }
 
@@ -61,6 +68,7 @@ class CommunityTip {
       title: json['title'] as String,
       body: json['body'] as String,
       imagePath: json['imagePath'] as String?,
+      imageUrl: json['imageUrl'] as String?,
     );
   }
 }

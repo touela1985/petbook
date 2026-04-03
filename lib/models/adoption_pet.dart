@@ -7,6 +7,7 @@ class AdoptionPet {
   final String description;
   final String contactPhone;
   final String? photoPath;
+  final String? photoUrl;
   final bool adopted;
 
   AdoptionPet({
@@ -18,6 +19,7 @@ class AdoptionPet {
     required this.description,
     required this.contactPhone,
     this.photoPath,
+    this.photoUrl,
     this.adopted = false,
   });
 
@@ -31,6 +33,7 @@ class AdoptionPet {
       'description': description,
       'contactPhone': contactPhone,
       'photoPath': photoPath,
+      'photoUrl': photoUrl,
       'adopted': adopted,
     };
   }
@@ -45,6 +48,7 @@ class AdoptionPet {
       description: json['description'],
       contactPhone: json['contactPhone'],
       photoPath: json['photoPath'],
+      photoUrl: json['photoUrl'] as String?,
       adopted: json['adopted'] ?? false,
     );
   }

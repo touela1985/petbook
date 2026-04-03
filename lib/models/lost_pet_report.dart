@@ -51,6 +51,7 @@ class LostPetReport {
   final String contactPhone;
   final bool isResolved;
   final String? photoPath;
+  final String? photoUrl;
   final double? latitude;
   final double? longitude;
   final DateTime createdAt;
@@ -66,6 +67,7 @@ class LostPetReport {
     required this.contactPhone,
     required this.isResolved,
     this.photoPath,
+    this.photoUrl,
     this.latitude,
     this.longitude,
     DateTime? createdAt,
@@ -84,6 +86,7 @@ class LostPetReport {
       'contactPhone': contactPhone,
       'isResolved': isResolved,
       'photoPath': photoPath,
+      'photoUrl': photoUrl,
       'latitude': latitude,
       'longitude': longitude,
       'createdAt': createdAt.toIso8601String(),
@@ -102,6 +105,7 @@ class LostPetReport {
       contactPhone: json['contactPhone'],
       isResolved: json['isResolved'] ?? false,
       photoPath: json['photoPath'],
+      photoUrl: json['photoUrl'] as String?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       createdAt: json['createdAt'] != null

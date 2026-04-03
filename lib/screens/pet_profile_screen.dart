@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -11,6 +10,7 @@ import '../models/pet_health_event.dart';
 import '../screens/add_health_event_screen.dart';
 import '../screens/edit_pet_screen.dart';
 import '../theme/app_theme.dart';
+import '../widgets/pet_image_widget.dart';
 
 class PetProfileScreen extends StatefulWidget {
   final PetRepository repo;
@@ -167,9 +167,11 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
   }
 
   void _openPhotoViewer(Pet pet) {
-    if (pet.photoBase64 == null || pet.photoBase64!.isEmpty) return;
-
-    final bytes = base64Decode(pet.photoBase64!);
+    final provider = petImageProvider(
+      photoUrl: pet.photoUrl,
+      photoBase64: pet.photoBase64,
+    );
+    if (provider == null) return;
 
     showDialog(
       context: context,
@@ -184,9 +186,16 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                 maxScale: 4,
                 child: AspectRatio(
                   aspectRatio: 1,
-                  child: Image.memory(
-                    bytes,
+                  child: Image(
+                    image: provider,
                     fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Center(
+                      child: Icon(
+                        Icons.broken_image_outlined,
+                        color: Colors.white70,
+                        size: 48,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -518,9 +527,12 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
   }
 
   Widget _buildPetPhoto(Pet pet) {
-    if (pet.photoBase64 != null && pet.photoBase64!.isNotEmpty) {
-      final bytes = base64Decode(pet.photoBase64!);
+    final provider = petImageProvider(
+      photoUrl: pet.photoUrl,
+      photoBase64: pet.photoBase64,
+    );
 
+    if (provider != null) {
       return GestureDetector(
         onTap: () => _openPhotoViewer(pet),
         child: Container(
@@ -539,7 +551,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
           ),
           child: CircleAvatar(
             radius: 54,
-            backgroundImage: MemoryImage(bytes),
+            backgroundImage: provider,
           ),
         ),
       );

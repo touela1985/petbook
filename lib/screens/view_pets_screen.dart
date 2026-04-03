@@ -1,10 +1,8 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 
 import '../data/pet_repository.dart';
 import '../models/pet.dart';
+import '../widgets/pet_image_widget.dart';
 import 'add_pet_screen.dart';
 import 'pet_profile_screen.dart';
 
@@ -35,15 +33,6 @@ class _ViewPetsScreenState extends State<ViewPetsScreen> {
   Future<void> _delete(String id) async {
     await widget.repo.deletePet(id);
     _refresh();
-  }
-
-  Uint8List? _getImageBytes(String? base64) {
-    if (base64 == null || base64.isEmpty) return null;
-    try {
-      return base64Decode(base64);
-    } catch (_) {
-      return null;
-    }
   }
 
   Future<void> _openPetProfile(Pet p) async {
@@ -132,7 +121,6 @@ class _ViewPetsScreenState extends State<ViewPetsScreen> {
   }
 
   Widget _petCard(Pet p) {
-    final imageBytes = _getImageBytes(p.photoBase64);
     final details = p.age == null || p.age!.trim().isEmpty
         ? p.type
         : '${p.type} • ${p.age}';
@@ -159,25 +147,26 @@ class _ViewPetsScreenState extends State<ViewPetsScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              ClipRRect(
+              PetImageWidget(
+                photoUrl: p.photoUrl,
+                photoBase64: p.photoBase64,
+                width: 88,
+                height: 88,
+                fit: BoxFit.cover,
                 borderRadius: BorderRadius.circular(18),
-                child: SizedBox(
+                placeholder: Container(
                   width: 88,
                   height: 88,
-                  child: imageBytes != null
-                      ? Image.memory(
-                          imageBytes,
-                          fit: BoxFit.cover,
-                        )
-                      : Container(
-                          color: const Color(0xFFE9F4F3),
-                          alignment: Alignment.center,
-                          child: const Icon(
-                            Icons.pets_rounded,
-                            size: 34,
-                            color: Color(0xFF0F7C82),
-                          ),
-                        ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE9F4F3),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.pets_rounded,
+                    size: 34,
+                    color: Color(0xFF0F7C82),
+                  ),
                 ),
               ),
               const SizedBox(width: 14),

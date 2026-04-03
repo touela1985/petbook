@@ -36,6 +36,7 @@ class PetRepository {
     String? gender,
     String? photoPath,
     String? photoBase64,
+    String? photoUrl,
   }) async {
     final pet = Pet(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -45,6 +46,7 @@ class PetRepository {
       gender: gender,
       photoPath: photoPath,
       photoBase64: photoBase64,
+      photoUrl: photoUrl,
     );
     _pets.add(pet);
     await savePets();
@@ -58,6 +60,7 @@ class PetRepository {
     String? gender,
     String? photoPath,
     String? photoBase64,
+    String? photoUrl,
   }) async {
     final index = _pets.indexWhere((p) => p.id == id);
     if (index == -1) return;
@@ -70,6 +73,7 @@ class PetRepository {
       gender: gender,
       photoPath: photoPath,
       photoBase64: photoBase64,
+      photoUrl: photoUrl,
     );
 
     await savePets();

@@ -6,6 +6,7 @@ class Pet {
   String? gender;
   String? photoPath;
   String? photoBase64;
+  String? photoUrl;
 
   Pet({
     required this.id,
@@ -15,6 +16,7 @@ class Pet {
     this.gender,
     this.photoPath,
     this.photoBase64,
+    this.photoUrl,
   });
 
   Map<String, dynamic> toJson() {
@@ -26,6 +28,7 @@ class Pet {
       'gender': gender,
       'photoPath': photoPath,
       'photoBase64': photoBase64,
+      'photoUrl': photoUrl,
     };
   }
 
@@ -40,6 +43,7 @@ class Pet {
       gender: json['gender'],
       photoPath: json['photoPath'],
       photoBase64: json['photoBase64'],
+      photoUrl: json['photoUrl'] as String?,
     );
   }
 }

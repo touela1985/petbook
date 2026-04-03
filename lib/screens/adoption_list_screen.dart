@@ -1,10 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 import '../data/adoption_pet_repository.dart';
 import '../models/adoption_pet.dart';
 import '../theme/app_theme.dart';
+import '../widgets/pet_image_widget.dart';
 import 'add_adoption_pet_screen.dart';
 import 'adoption_pet_details_screen.dart';
 
@@ -67,12 +66,16 @@ class _AdoptionListScreenState extends State<AdoptionListScreen> {
   }
 
   Widget _petImage(AdoptionPet pet) {
-    final hasPhoto = pet.photoPath != null && pet.photoPath!.isNotEmpty;
-
-    Widget fallback() {
-      return Container(
-        height: 82,
+    return PetImageWidget(
+      photoUrl: pet.photoUrl,
+      photoPath: pet.photoPath,
+      width: 82,
+      height: 82,
+      fit: BoxFit.cover,
+      borderRadius: BorderRadius.circular(16),
+      placeholder: Container(
         width: 82,
+        height: 82,
         decoration: BoxDecoration(
           color: AppTheme.primaryTeal.withOpacity(0.10),
           borderRadius: BorderRadius.circular(16),
@@ -82,19 +85,6 @@ class _AdoptionListScreenState extends State<AdoptionListScreen> {
           size: 34,
           color: AppTheme.primaryTeal,
         ),
-      );
-    }
-
-    if (!hasPhoto) return fallback();
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Image.file(
-        File(pet.photoPath!),
-        height: 82,
-        width: 82,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => fallback(),
       ),
     );
   }

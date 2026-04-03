@@ -1,9 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 import '../models/adoption_pet.dart';
 import '../theme/app_theme.dart';
+import '../widgets/pet_image_widget.dart';
 
 class AdoptionPetDetailsScreen extends StatelessWidget {
   final AdoptionPet pet;
@@ -18,7 +17,11 @@ class AdoptionPetDetailsScreen extends StatelessWidget {
   }
 
   void _openFullImage(BuildContext context) {
-    if (pet.photoPath == null || pet.photoPath!.isEmpty) return;
+    final provider = petImageProvider(
+      photoUrl: pet.photoUrl,
+      photoPath: pet.photoPath,
+    );
+    if (provider == null) return;
 
     showDialog(
       context: context,
@@ -33,8 +36,8 @@ class AdoptionPetDetailsScreen extends StatelessWidget {
                   minScale: 0.8,
                   maxScale: 4,
                   child: Center(
-                    child: Image.file(
-                      File(pet.photoPath!),
+                    child: Image(
+                      image: provider,
                       fit: BoxFit.contain,
                       errorBuilder: (_, __, ___) {
                         return const Center(
@@ -92,19 +95,21 @@ class AdoptionPetDetailsScreen extends StatelessWidget {
             child: SizedBox(
               height: 240,
               width: double.infinity,
-              child: Image.file(
-                File(pet.photoPath!),
+              child: PetImageWidget(
+                photoUrl: pet.photoUrl,
+                photoPath: pet.photoPath,
+                height: 240,
+                width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) {
-                  return Container(
-                    color: AppTheme.primaryTeal.withOpacity(0.08),
-                    child: const Icon(
-                      Icons.pets,
-                      size: 56,
-                      color: AppTheme.primaryTeal,
-                    ),
-                  );
-                },
+                borderRadius: BorderRadius.circular(20),
+                placeholder: Container(
+                  color: AppTheme.primaryTeal.withOpacity(0.08),
+                  child: const Icon(
+                    Icons.pets,
+                    size: 56,
+                    color: AppTheme.primaryTeal,
+                  ),
+                ),
               ),
             ),
           ),
@@ -155,7 +160,7 @@ class AdoptionPetDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEl = _isEl(context);
-    final hasPhoto = pet.photoPath != null && pet.photoPath!.isNotEmpty;
+    final hasPhoto = hasAnyImage(photoUrl: pet.photoUrl, photoPath: pet.photoPath);
 
     return Scaffold(
       backgroundColor: AppTheme.background,

@@ -1,6 +1,3 @@
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -8,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../data/found_pet_message_repository.dart';
 import '../models/found_pet_report.dart';
 import '../theme/app_theme.dart';
+import '../widgets/pet_image_widget.dart';
 import 'found_pet_messages_screen.dart';
 import 'send_found_pet_message_screen.dart';
 
@@ -55,9 +53,10 @@ class _FoundPetReportDetailsScreenState
 
   bool get _isEl => Localizations.localeOf(context).languageCode == 'el';
 
-  bool get _hasPhoto =>
-      widget.report.photoPath != null &&
-      widget.report.photoPath!.trim().isNotEmpty;
+  bool get _hasPhoto => hasAnyImage(
+        photoUrl: widget.report.photoUrl,
+        photoPath: widget.report.photoPath,
+      );
 
   bool get _hasPhone => widget.report.contactPhone.trim().isNotEmpty;
 
@@ -104,39 +103,16 @@ class _FoundPetReportDetailsScreenState
     double? width,
     BoxFit fit = BoxFit.cover,
   }) {
-    if (!_hasPhoto) {
-      return _buildFallbackImage(
-        height: height,
-        width: width,
-        icon: Icons.pets,
-      );
-    }
-
-    final path = widget.report.photoPath!.trim();
-
-    if (kIsWeb) {
-      return Image.network(
-        path,
-        height: height,
-        width: width,
-        fit: fit,
-        errorBuilder: (_, __, ___) => _buildFallbackImage(
-          height: height,
-          width: width,
-          icon: Icons.broken_image_outlined,
-        ),
-      );
-    }
-
-    return Image.file(
-      File(path),
+    return PetImageWidget(
+      photoUrl: widget.report.photoUrl,
+      photoPath: widget.report.photoPath,
       height: height,
       width: width,
       fit: fit,
-      errorBuilder: (_, __, ___) => _buildFallbackImage(
+      placeholder: _buildFallbackImage(
         height: height,
         width: width,
-        icon: Icons.broken_image_outlined,
+        icon: Icons.pets,
       ),
     );
   }

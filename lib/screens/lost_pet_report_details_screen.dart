@@ -1,6 +1,3 @@
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -10,6 +7,7 @@ import '../data/lost_pet_message_repository.dart';
 import '../data/lost_pet_report_repository.dart';
 import '../models/lost_pet_report.dart';
 import '../theme/app_theme.dart';
+import '../widgets/pet_image_widget.dart';
 import 'lost_pet_messages_screen.dart';
 import 'send_lost_pet_message_screen.dart';
 
@@ -75,8 +73,10 @@ class _LostPetReportDetailsScreenState
   bool get _hasCoordinates =>
       _report.latitude != null && _report.longitude != null;
 
-  bool get _hasPhoto =>
-      _report.photoPath != null && _report.photoPath!.trim().isNotEmpty;
+  bool get _hasPhoto => hasAnyImage(
+        photoUrl: _report.photoUrl,
+        photoPath: _report.photoPath,
+      );
 
   bool get _hasPhone => _report.contactPhone.trim().isNotEmpty;
 
@@ -110,8 +110,13 @@ class _LostPetReportDetailsScreenState
     double? width,
     BoxFit fit = BoxFit.cover,
   }) {
-    if (!_hasPhoto) {
-      return Container(
+    return PetImageWidget(
+      photoUrl: _report.photoUrl,
+      photoPath: _report.photoPath,
+      height: height,
+      width: width,
+      fit: fit,
+      placeholder: Container(
         height: height ?? 268,
         width: width ?? double.infinity,
         color: AppTheme.surface,
@@ -122,42 +127,7 @@ class _LostPetReportDetailsScreenState
             color: AppTheme.textSecondary,
           ),
         ),
-      );
-    }
-
-    final path = _report.photoPath!.trim();
-
-    Widget fallback() {
-      return Container(
-        height: height ?? 268,
-        width: width ?? double.infinity,
-        color: AppTheme.surface,
-        child: const Center(
-          child: Icon(
-            Icons.broken_image_outlined,
-            size: 56,
-            color: AppTheme.textSecondary,
-          ),
-        ),
-      );
-    }
-
-    if (kIsWeb) {
-      return Image.network(
-        path,
-        height: height,
-        width: width,
-        fit: fit,
-        errorBuilder: (_, __, ___) => fallback(),
-      );
-    }
-
-    return Image.file(
-      File(path),
-      height: height,
-      width: width,
-      fit: fit,
-      errorBuilder: (_, __, ___) => fallback(),
+      ),
     );
   }
 
@@ -376,6 +346,7 @@ Shared via Petbook
       contactPhone: _report.contactPhone,
       isResolved: _report.isResolved,
       photoPath: _report.photoPath,
+      photoUrl: _report.photoUrl,
       latitude: _report.latitude,
       longitude: _report.longitude,
       createdAt: _report.createdAt,
@@ -442,6 +413,7 @@ Shared via Petbook
       contactPhone: _report.contactPhone,
       isResolved: true,
       photoPath: _report.photoPath,
+      photoUrl: _report.photoUrl,
       latitude: _report.latitude,
       longitude: _report.longitude,
       createdAt: _report.createdAt,

@@ -737,45 +737,53 @@ class PlaceCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (place.imagePath != null && place.imagePath!.trim().isNotEmpty)
+              if ((place.imageUrl ?? place.imagePath) != null &&
+                  (place.imageUrl ?? place.imagePath)!.trim().isNotEmpty)
                 GestureDetector(
-                  onTap: () => openFullImage(context, place.imagePath!),
+                  onTap: () => openFullImage(
+                      context, (place.imageUrl ?? place.imagePath)!),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(18),
                     child: SizedBox(
                       width: 112,
                       height: 112,
-                      child: kIsWeb
-                          ? Image.network(
-                              place.imagePath!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                color: const Color(0xFFE9F4F3),
-                                alignment: Alignment.center,
-                                child: const Icon(
-                                  Icons.image_not_supported_outlined,
-                                  size: 28,
-                                  color: _primaryTeal,
+                      child: () {
+                        final src = (place.imageUrl ?? place.imagePath)!;
+                        final isUrl =
+                            kIsWeb || src.startsWith('http');
+                        return isUrl
+                            ? Image.network(
+                                src,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: const Color(0xFFE9F4F3),
+                                  alignment: Alignment.center,
+                                  child: const Icon(
+                                    Icons.image_not_supported_outlined,
+                                    size: 28,
+                                    color: _primaryTeal,
+                                  ),
                                 ),
-                              ),
-                            )
-                          : Image.file(
-                              File(place.imagePath!),
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                color: const Color(0xFFE9F4F3),
-                                alignment: Alignment.center,
-                                child: const Icon(
-                                  Icons.image_not_supported_outlined,
-                                  size: 28,
-                                  color: _primaryTeal,
+                              )
+                            : Image.file(
+                                File(src),
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: const Color(0xFFE9F4F3),
+                                  alignment: Alignment.center,
+                                  child: const Icon(
+                                    Icons.image_not_supported_outlined,
+                                    size: 28,
+                                    color: _primaryTeal,
+                                  ),
                                 ),
-                              ),
-                            ),
+                              );
+                      }(),
                     ),
                   ),
                 ),
-              if (place.imagePath != null && place.imagePath!.trim().isNotEmpty)
+              if ((place.imageUrl ?? place.imagePath) != null &&
+                  (place.imageUrl ?? place.imagePath)!.trim().isNotEmpty)
                 const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -990,27 +998,28 @@ class TipCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (tip.imagePath != null && tip.imagePath!.trim().isNotEmpty)
+              if ((tip.imageUrl ?? tip.imagePath) != null &&
+                  (tip.imageUrl ?? tip.imagePath)!.trim().isNotEmpty)
                 GestureDetector(
-                  onTap: () => openFullImage(context, tip.imagePath!),
+                  onTap: () => openFullImage(
+                      context, (tip.imageUrl ?? tip.imagePath)!),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: SizedBox(
                       width: 108,
                       height: 108,
-                      child: kIsWeb
-                          ? Image.network(
-                              tip.imagePath!,
-                              fit: BoxFit.cover,
-                            )
-                          : Image.file(
-                              File(tip.imagePath!),
-                              fit: BoxFit.cover,
-                            ),
+                      child: () {
+                        final src = (tip.imageUrl ?? tip.imagePath)!;
+                        final isUrl = kIsWeb || src.startsWith('http');
+                        return isUrl
+                            ? Image.network(src, fit: BoxFit.cover)
+                            : Image.file(File(src), fit: BoxFit.cover);
+                      }(),
                     ),
                   ),
                 ),
-              if (tip.imagePath != null && tip.imagePath!.trim().isNotEmpty)
+              if ((tip.imageUrl ?? tip.imagePath) != null &&
+                  (tip.imageUrl ?? tip.imagePath)!.trim().isNotEmpty)
                 const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -1646,7 +1655,7 @@ class PlaceDetailsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _PlaceDetailsImage(imagePath: place.imagePath),
+              _PlaceDetailsImage(imagePath: place.imageUrl ?? place.imagePath),
               const SizedBox(height: 16),
               Text(
                 place.title,
@@ -1678,6 +1687,8 @@ class _PlaceDetailsImage extends StatelessWidget {
 
   const _PlaceDetailsImage({required this.imagePath});
 
+  static bool _isUrl(String path) => path.startsWith('http');
+
   @override
   Widget build(BuildContext context) {
     if (imagePath == null || imagePath!.trim().isEmpty) {
@@ -1698,7 +1709,7 @@ class _PlaceDetailsImage extends StatelessWidget {
       );
     }
 
-    final child = kIsWeb
+    final child = (kIsWeb || _isUrl(imagePath!))
         ? Image.network(
             imagePath!,
             height: 210,
@@ -1789,15 +1800,19 @@ class TipDetailsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (tip.imagePath != null && tip.imagePath!.trim().isNotEmpty)
+              if ((tip.imageUrl ?? tip.imagePath) != null &&
+                  (tip.imageUrl ?? tip.imagePath)!.trim().isNotEmpty)
                 GestureDetector(
-                  onTap: () => openFullImage(context, tip.imagePath!),
+                  onTap: () => openFullImage(
+                      context, (tip.imageUrl ?? tip.imagePath)!),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
-                    child: _TipDetailsImage(imagePath: tip.imagePath!),
+                    child: _TipDetailsImage(
+                        imagePath: (tip.imageUrl ?? tip.imagePath)!),
                   ),
                 ),
-              if (tip.imagePath != null && tip.imagePath!.trim().isNotEmpty)
+              if ((tip.imageUrl ?? tip.imagePath) != null &&
+                  (tip.imageUrl ?? tip.imagePath)!.trim().isNotEmpty)
                 const SizedBox(height: 16),
               Text(
                 tip.title,
@@ -1839,9 +1854,11 @@ class _TipDetailsImage extends StatelessWidget {
 
   const _TipDetailsImage({required this.imagePath});
 
+  static bool _isUrl(String path) => path.startsWith('http');
+
   @override
   Widget build(BuildContext context) {
-    if (kIsWeb) {
+    if (kIsWeb || _isUrl(imagePath)) {
       return Image.network(
         imagePath,
         height: 220,
@@ -1859,11 +1876,13 @@ class _TipDetailsImage extends StatelessWidget {
   }
 }
 
+bool _isUrlPath(String path) => path.startsWith('http');
+
 void openFullImage(BuildContext context, String imagePath) {
   showDialog(
     context: context,
     builder: (_) {
-      final child = kIsWeb
+      final child = (kIsWeb || _isUrlPath(imagePath))
           ? Image.network(
               imagePath,
               fit: BoxFit.contain,
