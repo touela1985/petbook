@@ -4,9 +4,11 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 import '../data/found_pet_report_repository.dart';
 import '../data/lost_pet_report_repository.dart';
+import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -33,6 +35,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _phone = '';
   String _email = '';
   String? _photoBase64;
+  String? _photoUrl;
+  bool _photoUrlFailed = false;
   String _preferredContact = 'all';
   int _lostCount = 0;
   int _foundCount = 0;
@@ -56,6 +60,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _phone = prefs.getString('profile_phone') ?? '';
       _email = prefs.getString('profile_email') ?? '';
       _photoBase64 = prefs.getString('profile_photo');
+      _photoUrl = prefs.getString('profile_photo_url');
       _preferredContact =
           prefs.getString('profile_preferred_contact') ?? 'all';
       _lostCount = lost.length;
@@ -89,8 +94,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (!mounted) return;
 
+    // Upload to Firebase Storage
+    final prefs = await SharedPreferences.getInstance();
+    String? profileId = prefs.getString('profile_id');
+    if (profileId == null) {
+      profileId = const Uuid().v4();
+      await prefs.setString('profile_id', profileId);
+    }
+    final url = await StorageService.uploadProfileImage(bytes, profileId);
+    if (url != null) {
+      await prefs.setString('profile_photo_url', url);
+    }
+
+    if (!mounted) return;
+
     setState(() {
       _photoBase64 = base64Encode(bytes);
+      if (url != null) {
+        _photoUrl = url;
+        _photoUrlFailed = false;
+      }
     });
 
     await _saveProfileFields();
@@ -634,6 +657,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  ImageProvider? _effectiveImage(Uint8List? imageBytes) {
+    if (imageBytes != null) return MemoryImage(imageBytes);
+    if (_photoUrl != null && !_photoUrlFailed) return NetworkImage(_photoUrl!);
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEl = Localizations.localeOf(context).languageCode == 'el';
@@ -689,9 +718,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: CircleAvatar(
                     radius: 62,
                     backgroundColor: Colors.grey.shade200,
-                    backgroundImage:
-                        imageBytes != null ? MemoryImage(imageBytes) : null,
-                    child: imageBytes == null
+                    backgroundImage: _effectiveImage(imageBytes),
+                    onBackgroundImageError: _effectiveImage(imageBytes) is NetworkImage
+                        ? (_, __) => setState(() => _photoUrlFailed = true)
+                        : null,
+                    child: _effectiveImage(imageBytes) == null
                         ? const Icon(
                             Icons.person_rounded,
                             size: 62,

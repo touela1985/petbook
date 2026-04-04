@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../data/adoption_pet_repository.dart';
 import '../models/adoption_pet.dart';
+import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
 
 class AddAdoptionPetScreen extends StatefulWidget {
@@ -84,8 +85,16 @@ class _AddAdoptionPetScreenState extends State<AddAdoptionPetScreen> {
     final existing = widget.initialPet;
 
     if (existing == null) {
+      final petId = _uuid.v4();
+
+      String? photoUrl;
+      if (_selectedImage != null) {
+        final bytes = await _selectedImage!.readAsBytes();
+        photoUrl = await StorageService.uploadAdoptionPetImage(bytes, petId);
+      }
+
       final pet = AdoptionPet(
-        id: _uuid.v4(),
+        id: petId,
         name: _nameController.text.trim(),
         type: _typeController.text.trim(),
         age: _ageController.text.trim(),
@@ -93,10 +102,18 @@ class _AddAdoptionPetScreenState extends State<AddAdoptionPetScreen> {
         description: _descriptionController.text.trim(),
         contactPhone: _phoneController.text.trim(),
         photoPath: _selectedImage?.path,
+        photoUrl: photoUrl,
       );
 
       await _repo.addPet(pet);
     } else {
+      String? photoUrl = existing.photoUrl;
+      if (_selectedImage != null) {
+        final bytes = await _selectedImage!.readAsBytes();
+        final uploaded = await StorageService.uploadAdoptionPetImage(bytes, existing.id);
+        if (uploaded != null) photoUrl = uploaded;
+      }
+
       final updatedPet = AdoptionPet(
         id: existing.id,
         name: _nameController.text.trim(),
@@ -106,6 +123,7 @@ class _AddAdoptionPetScreenState extends State<AddAdoptionPetScreen> {
         description: _descriptionController.text.trim(),
         contactPhone: _phoneController.text.trim(),
         photoPath: _selectedImage?.path ?? existing.photoPath,
+        photoUrl: photoUrl,
         adopted: existing.adopted,
       );
 

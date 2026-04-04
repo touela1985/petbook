@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../data/community_repository.dart';
 import '../models/community_place.dart';
 import '../models/community_tip.dart';
+import '../services/storage_service.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -1171,6 +1172,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
 
   final ImagePicker _picker = ImagePicker();
   String? _imagePath;
+  XFile? _pickedImage;
 
   bool get _isEditing => widget.existingPlace != null;
 
@@ -1201,10 +1203,11 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
 
     setState(() {
       _imagePath = picked.path;
+      _pickedImage = picked;
     });
   }
 
-  void _save(bool isEl) {
+  Future<void> _save(bool isEl) async {
     if (_titleCtrl.text.trim().isEmpty ||
         _descriptionCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1219,7 +1222,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
       return;
     }
 
-    final result = _isEditing
+    var result = _isEditing
         ? widget.existingPlace!.copyWith(
             title: _titleCtrl.text.trim(),
             description: _descriptionCtrl.text.trim(),
@@ -1231,6 +1234,15 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
             imagePath: _imagePath,
           );
 
+    if (_pickedImage != null) {
+      final bytes = await _pickedImage!.readAsBytes();
+      final url = await StorageService.uploadCommunityImage(bytes, result.id);
+      if (url != null) {
+        result = result.copyWith(imageUrl: url);
+      }
+    }
+
+    if (!mounted) return;
     Navigator.pop(context, result);
   }
 
@@ -1327,6 +1339,7 @@ class _AddTipScreenState extends State<AddTipScreen> {
 
   final ImagePicker _picker = ImagePicker();
   String? _imagePath;
+  XFile? _pickedImage;
 
   bool get _isEditing => widget.existingTip != null;
 
@@ -1359,10 +1372,11 @@ class _AddTipScreenState extends State<AddTipScreen> {
 
     setState(() {
       _imagePath = picked.path;
+      _pickedImage = picked;
     });
   }
 
-  void _save(bool isEl) {
+  Future<void> _save(bool isEl) async {
     if (_titleCtrl.text.trim().isEmpty || _bodyCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1376,7 +1390,7 @@ class _AddTipScreenState extends State<AddTipScreen> {
       return;
     }
 
-    final result = _isEditing
+    var result = _isEditing
         ? widget.existingTip!.copyWith(
             author: _authorCtrl.text.trim(),
             title: _titleCtrl.text.trim(),
@@ -1390,6 +1404,15 @@ class _AddTipScreenState extends State<AddTipScreen> {
             imagePath: _imagePath,
           );
 
+    if (_pickedImage != null) {
+      final bytes = await _pickedImage!.readAsBytes();
+      final url = await StorageService.uploadCommunityImage(bytes, result.id);
+      if (url != null) {
+        result = result.copyWith(imageUrl: url);
+      }
+    }
+
+    if (!mounted) return;
     Navigator.pop(context, result);
   }
 

@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../data/found_pet_report_repository.dart';
 import '../models/found_pet_report.dart';
+import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
 import 'pick_location_screen.dart';
 
@@ -115,8 +116,14 @@ class _AddFoundPetReportScreenState extends State<AddFoundPetReportScreen> {
     final existing = widget.initialReport;
 
     if (existing == null) {
+      final reportId = _uuid.v4();
+      String? photoUrl;
+      if (_selectedImage != null) {
+        final bytes = await _selectedImage!.readAsBytes();
+        photoUrl = await StorageService.uploadFoundPetImage(bytes, reportId);
+      }
       final report = FoundPetReport(
-        id: _uuid.v4(),
+        id: reportId,
         type: _typeController.text.trim(),
         locationFound: _locationController.text.trim(),
         foundDate: _selectedDate,
@@ -124,11 +131,18 @@ class _AddFoundPetReportScreenState extends State<AddFoundPetReportScreen> {
         contactPhone: _phoneController.text.trim(),
         isResolved: false,
         photoPath: _selectedImage?.path,
+        photoUrl: photoUrl,
         latitude: _selectedLatitude,
         longitude: _selectedLongitude,
       );
       await _repo.addReport(report);
     } else {
+      String? photoUrl = existing.photoUrl;
+      if (_selectedImage != null) {
+        final bytes = await _selectedImage!.readAsBytes();
+        photoUrl = await StorageService.uploadFoundPetImage(bytes, existing.id)
+            ?? existing.photoUrl;
+      }
       final updatedReport = FoundPetReport(
         id: existing.id,
         type: _typeController.text.trim(),
@@ -138,6 +152,7 @@ class _AddFoundPetReportScreenState extends State<AddFoundPetReportScreen> {
         contactPhone: _phoneController.text.trim(),
         isResolved: existing.isResolved,
         photoPath: _selectedImage?.path ?? existing.photoPath,
+        photoUrl: photoUrl,
         latitude: _selectedLatitude,
         longitude: _selectedLongitude,
       );

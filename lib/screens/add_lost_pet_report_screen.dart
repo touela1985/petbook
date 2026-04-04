@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../data/lost_pet_report_repository.dart';
 import '../models/lost_pet_report.dart';
+import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
 import 'pick_location_screen.dart';
 
@@ -122,8 +123,16 @@ class _AddLostPetReportScreenState
     final existing = widget.initialReport;
 
     if (existing == null) {
+      final reportId = _uuid.v4();
+
+      String? uploadedUrl;
+      if (_selectedImage != null) {
+        final bytes = await _selectedImage!.readAsBytes();
+        uploadedUrl = await StorageService.uploadLostPetImage(bytes, reportId);
+      }
+
       final report = LostPetReport(
-        id: _uuid.v4(),
+        id: reportId,
         petName: _petNameController.text.trim(),
         type: _typeController.text.trim(),
         lastSeenLocation: _locationController.text.trim(),
@@ -132,12 +141,19 @@ class _AddLostPetReportScreenState
         contactPhone: _phoneController.text.trim(),
         isResolved: false,
         photoPath: _selectedImage?.path,
+        photoUrl: uploadedUrl,
         latitude: _selectedLatitude,
         longitude: _selectedLongitude,
       );
 
       await _repo.addReport(report);
     } else {
+      String? uploadedUrl;
+      if (_selectedImage != null) {
+        final bytes = await _selectedImage!.readAsBytes();
+        uploadedUrl = await StorageService.uploadLostPetImage(bytes, existing.id);
+      }
+
       final updatedReport = LostPetReport(
         id: existing.id,
         petName: _petNameController.text.trim(),
@@ -148,6 +164,7 @@ class _AddLostPetReportScreenState
         contactPhone: _phoneController.text.trim(),
         isResolved: existing.isResolved,
         photoPath: _selectedImage?.path ?? existing.photoPath,
+        photoUrl: uploadedUrl ?? existing.photoUrl,
         latitude: _selectedLatitude,
         longitude: _selectedLongitude,
         createdAt: existing.createdAt,
