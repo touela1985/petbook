@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../data/pet_repository.dart';
 import '../models/pet.dart';
+import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
 
 class EditPetScreen extends StatefulWidget {
@@ -111,6 +112,14 @@ class _EditPetScreenState extends State<EditPetScreen> {
 
     if (_imageBytes != null) {
       _pet!.photoBase64 = base64Encode(_imageBytes!);
+    }
+
+    // Try to upload new image to Firebase Storage; keep existing photoUrl on failure.
+    if (_pickedImage != null && _imageBytes != null) {
+      final url = await StorageService.uploadPetImage(_imageBytes!, _pet!.id);
+      if (url != null) {
+        _pet!.photoUrl = url;
+      }
     }
 
     await widget.repo.savePets();

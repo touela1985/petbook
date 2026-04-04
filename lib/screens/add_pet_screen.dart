@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../data/pet_repository.dart';
 import '../models/pet.dart';
+import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
 
 class AddPetScreen extends StatefulWidget {
@@ -122,6 +123,15 @@ class _AddPetScreenState extends State<AddPetScreen> {
 
     if (_isEditMode) {
       final oldPet = widget.petToEdit!;
+
+      // Try to upload new image; fall back to existing photoUrl if upload fails.
+      String? photoUrl = oldPet.photoUrl;
+      if (_pickedImage != null && _imageBytes != null) {
+        photoUrl =
+            await StorageService.uploadPetImage(_imageBytes!, oldPet.id) ??
+                oldPet.photoUrl;
+      }
+
       await widget.repo.updatePet(
         id: oldPet.id,
         name: name,
@@ -130,8 +140,16 @@ class _AddPetScreenState extends State<AddPetScreen> {
         gender: _gender,
         photoPath: _pickedImage?.path ?? oldPet.photoPath,
         photoBase64: photoBase64 ?? oldPet.photoBase64,
+        photoUrl: photoUrl,
       );
     } else {
+      // Generate a stable storage key to use as path in Firebase Storage.
+      final storageKey = DateTime.now().millisecondsSinceEpoch.toString();
+      String? photoUrl;
+      if (_imageBytes != null) {
+        photoUrl = await StorageService.uploadPetImage(_imageBytes!, storageKey);
+      }
+
       await widget.repo.addPet(
         name: name,
         type: _type,
@@ -139,6 +157,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
         gender: _gender,
         photoPath: _pickedImage?.path,
         photoBase64: photoBase64,
+        photoUrl: photoUrl,
       );
     }
 
