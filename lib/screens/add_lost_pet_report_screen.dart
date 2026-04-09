@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -39,6 +40,7 @@ class _AddLostPetReportScreenState
   XFile? _selectedImage;
   double? _selectedLatitude;
   double? _selectedLongitude;
+  bool _isSubmitting = false;
 
   bool get _isEditing => widget.initialReport != null;
   bool get _isEl =>
@@ -107,6 +109,8 @@ class _AddLostPetReportScreenState
   }
 
   Future<void> _submit() async {
+    if (_isSubmitting) return;
+
     if (_locationController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -120,61 +124,69 @@ class _AddLostPetReportScreenState
       return;
     }
 
-    final existing = widget.initialReport;
+    setState(() => _isSubmitting = true);
 
-    if (existing == null) {
-      final reportId = _uuid.v4();
+    try {
+      final existing = widget.initialReport;
 
-      String? uploadedUrl;
-      if (_selectedImage != null) {
-        final bytes = await _selectedImage!.readAsBytes();
-        uploadedUrl = await StorageService.uploadLostPetImage(bytes, reportId);
+      if (existing == null) {
+        final reportId = _uuid.v4();
+
+        String? uploadedUrl;
+        if (_selectedImage != null) {
+          final bytes = await _selectedImage!.readAsBytes();
+          uploadedUrl = await StorageService.uploadLostPetImage(bytes, reportId);
+        }
+
+        final report = LostPetReport(
+          id: reportId,
+          petName: _petNameController.text.trim(),
+          type: _typeController.text.trim(),
+          lastSeenLocation: _locationController.text.trim(),
+          lastSeenDate: _selectedDate,
+          notes: _notesController.text.trim(),
+          contactPhone: _phoneController.text.trim(),
+          isResolved: false,
+          photoPath: _selectedImage?.path,
+          photoUrl: uploadedUrl,
+          latitude: _selectedLatitude,
+          longitude: _selectedLongitude,
+          userId: FirebaseAuth.instance.currentUser?.uid,
+        );
+
+        await _repo.addReport(report);
+      } else {
+        String? uploadedUrl;
+        if (_selectedImage != null) {
+          final bytes = await _selectedImage!.readAsBytes();
+          uploadedUrl = await StorageService.uploadLostPetImage(bytes, existing.id);
+        }
+
+        final updatedReport = LostPetReport(
+          id: existing.id,
+          petName: _petNameController.text.trim(),
+          type: _typeController.text.trim(),
+          lastSeenLocation: _locationController.text.trim(),
+          lastSeenDate: _selectedDate,
+          notes: _notesController.text.trim(),
+          contactPhone: _phoneController.text.trim(),
+          isResolved: existing.isResolved,
+          photoPath: _selectedImage?.path ?? existing.photoPath,
+          photoUrl: uploadedUrl ?? existing.photoUrl,
+          latitude: _selectedLatitude,
+          longitude: _selectedLongitude,
+          createdAt: existing.createdAt,
+          userId: existing.userId,
+        );
+
+        await _repo.updateReport(updatedReport);
       }
 
-      final report = LostPetReport(
-        id: reportId,
-        petName: _petNameController.text.trim(),
-        type: _typeController.text.trim(),
-        lastSeenLocation: _locationController.text.trim(),
-        lastSeenDate: _selectedDate,
-        notes: _notesController.text.trim(),
-        contactPhone: _phoneController.text.trim(),
-        isResolved: false,
-        photoPath: _selectedImage?.path,
-        photoUrl: uploadedUrl,
-        latitude: _selectedLatitude,
-        longitude: _selectedLongitude,
-      );
-
-      await _repo.addReport(report);
-    } else {
-      String? uploadedUrl;
-      if (_selectedImage != null) {
-        final bytes = await _selectedImage!.readAsBytes();
-        uploadedUrl = await StorageService.uploadLostPetImage(bytes, existing.id);
-      }
-
-      final updatedReport = LostPetReport(
-        id: existing.id,
-        petName: _petNameController.text.trim(),
-        type: _typeController.text.trim(),
-        lastSeenLocation: _locationController.text.trim(),
-        lastSeenDate: _selectedDate,
-        notes: _notesController.text.trim(),
-        contactPhone: _phoneController.text.trim(),
-        isResolved: existing.isResolved,
-        photoPath: _selectedImage?.path ?? existing.photoPath,
-        photoUrl: uploadedUrl ?? existing.photoUrl,
-        latitude: _selectedLatitude,
-        longitude: _selectedLongitude,
-        createdAt: existing.createdAt,
-      );
-
-      await _repo.updateReport(updatedReport);
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
-
-    if (!mounted) return;
-    Navigator.pop(context, true);
   }
 
   String _formatDate(DateTime date) {
@@ -348,12 +360,21 @@ class _AddLostPetReportScreenState
           ),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: _submit,
-            child: Text(
-              _isEditing
-                  ? (isEl ? 'Ενημέρωση' : 'Update report')
-                  : (isEl ? 'Δημιουργία' : 'Create report'),
-            ),
+            onPressed: _isSubmitting ? null : _submit,
+            child: _isSubmitting
+                ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(
+                    _isEditing
+                        ? (isEl ? 'Ενημέρωση' : 'Update report')
+                        : (isEl ? 'Δημιουργία' : 'Create report'),
+                  ),
           ),
         ],
       ),

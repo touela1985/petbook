@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../data/pet_repository.dart';
-import 'main_navigation.dart';
+import 'auth_wrapper.dart';
 
 class SplashScreen extends StatefulWidget {
   final PetRepository repo;
@@ -30,7 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => MainNavigation(
+          builder: (_) => AuthWrapper(
             repo: widget.repo,
             onChangeLocale: widget.onChangeLocale,
             currentLocale: widget.currentLocale,

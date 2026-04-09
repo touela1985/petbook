@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -103,6 +104,7 @@ class _AddAdoptionPetScreenState extends State<AddAdoptionPetScreen> {
         contactPhone: _phoneController.text.trim(),
         photoPath: _selectedImage?.path,
         photoUrl: photoUrl,
+        userId: FirebaseAuth.instance.currentUser?.uid,
       );
 
       await _repo.addPet(pet);
@@ -125,6 +127,7 @@ class _AddAdoptionPetScreenState extends State<AddAdoptionPetScreen> {
         photoPath: _selectedImage?.path ?? existing.photoPath,
         photoUrl: photoUrl,
         adopted: existing.adopted,
+        userId: existing.userId,
       );
 
       await _repo.updatePet(updatedPet);

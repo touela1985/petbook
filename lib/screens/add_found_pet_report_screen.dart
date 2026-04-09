@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -36,6 +37,7 @@ class _AddFoundPetReportScreenState extends State<AddFoundPetReportScreen> {
   XFile? _selectedImage;
   double? _selectedLatitude;
   double? _selectedLongitude;
+  bool _isSubmitting = false;
 
   bool get _isEditing => widget.initialReport != null;
   bool get _isEl => Localizations.localeOf(context).languageCode == 'el';
@@ -100,6 +102,8 @@ class _AddFoundPetReportScreenState extends State<AddFoundPetReportScreen> {
   }
 
   Future<void> _submit() async {
+    if (_isSubmitting) return;
+
     if (_locationController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -113,54 +117,62 @@ class _AddFoundPetReportScreenState extends State<AddFoundPetReportScreen> {
       return;
     }
 
-    final existing = widget.initialReport;
+    setState(() => _isSubmitting = true);
 
-    if (existing == null) {
-      final reportId = _uuid.v4();
-      String? photoUrl;
-      if (_selectedImage != null) {
-        final bytes = await _selectedImage!.readAsBytes();
-        photoUrl = await StorageService.uploadFoundPetImage(bytes, reportId);
+    try {
+      final existing = widget.initialReport;
+
+      if (existing == null) {
+        final reportId = _uuid.v4();
+        String? photoUrl;
+        if (_selectedImage != null) {
+          final bytes = await _selectedImage!.readAsBytes();
+          photoUrl = await StorageService.uploadFoundPetImage(bytes, reportId);
+        }
+        final report = FoundPetReport(
+          id: reportId,
+          type: _typeController.text.trim(),
+          locationFound: _locationController.text.trim(),
+          foundDate: _selectedDate,
+          notes: _notesController.text.trim(),
+          contactPhone: _phoneController.text.trim(),
+          isResolved: false,
+          photoPath: _selectedImage?.path,
+          photoUrl: photoUrl,
+          latitude: _selectedLatitude,
+          longitude: _selectedLongitude,
+          userId: FirebaseAuth.instance.currentUser?.uid,
+        );
+        await _repo.addReport(report);
+      } else {
+        String? photoUrl = existing.photoUrl;
+        if (_selectedImage != null) {
+          final bytes = await _selectedImage!.readAsBytes();
+          photoUrl = await StorageService.uploadFoundPetImage(bytes, existing.id)
+              ?? existing.photoUrl;
+        }
+        final updatedReport = FoundPetReport(
+          id: existing.id,
+          type: _typeController.text.trim(),
+          locationFound: _locationController.text.trim(),
+          foundDate: _selectedDate,
+          notes: _notesController.text.trim(),
+          contactPhone: _phoneController.text.trim(),
+          isResolved: existing.isResolved,
+          photoPath: _selectedImage?.path ?? existing.photoPath,
+          photoUrl: photoUrl,
+          latitude: _selectedLatitude,
+          longitude: _selectedLongitude,
+          userId: existing.userId,
+        );
+        await _repo.updateReport(updatedReport);
       }
-      final report = FoundPetReport(
-        id: reportId,
-        type: _typeController.text.trim(),
-        locationFound: _locationController.text.trim(),
-        foundDate: _selectedDate,
-        notes: _notesController.text.trim(),
-        contactPhone: _phoneController.text.trim(),
-        isResolved: false,
-        photoPath: _selectedImage?.path,
-        photoUrl: photoUrl,
-        latitude: _selectedLatitude,
-        longitude: _selectedLongitude,
-      );
-      await _repo.addReport(report);
-    } else {
-      String? photoUrl = existing.photoUrl;
-      if (_selectedImage != null) {
-        final bytes = await _selectedImage!.readAsBytes();
-        photoUrl = await StorageService.uploadFoundPetImage(bytes, existing.id)
-            ?? existing.photoUrl;
-      }
-      final updatedReport = FoundPetReport(
-        id: existing.id,
-        type: _typeController.text.trim(),
-        locationFound: _locationController.text.trim(),
-        foundDate: _selectedDate,
-        notes: _notesController.text.trim(),
-        contactPhone: _phoneController.text.trim(),
-        isResolved: existing.isResolved,
-        photoPath: _selectedImage?.path ?? existing.photoPath,
-        photoUrl: photoUrl,
-        latitude: _selectedLatitude,
-        longitude: _selectedLongitude,
-      );
-      await _repo.updateReport(updatedReport);
+
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
-
-    if (!mounted) return;
-    Navigator.pop(context, true);
   }
 
   String _formatDate(DateTime date) {
@@ -385,8 +397,17 @@ class _AddFoundPetReportScreenState extends State<AddFoundPetReportScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _submit,
-                icon: const Icon(Icons.campaign),
+                onPressed: _isSubmitting ? null : _submit,
+                icon: _isSubmitting
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.campaign),
                 label: Text(
                   _isEditing
                       ? (isEl ? 'Ενημέρωση' : 'Update report')

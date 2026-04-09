@@ -56,6 +56,7 @@ class LostPetReport {
   final double? longitude;
   final DateTime createdAt;
   final List<LostPetSighting> sightings;
+  final String? userId;
 
   LostPetReport({
     required this.id,
@@ -72,6 +73,7 @@ class LostPetReport {
     this.longitude,
     DateTime? createdAt,
     List<LostPetSighting>? sightings,
+    this.userId,
   })  : createdAt = createdAt ?? DateTime.now(),
         sightings = sightings ?? [];
 
@@ -91,6 +93,7 @@ class LostPetReport {
       'longitude': longitude,
       'createdAt': createdAt.toIso8601String(),
       'sightings': sightings.map((s) => s.toJson()).toList(),
+      'userId': userId,
     };
   }
 
@@ -115,6 +118,7 @@ class LostPetReport {
               ?.map((item) => LostPetSighting.fromJson(item))
               .toList() ??
           [],
+      userId: json['userId'] as String?,
     );
   }
 }

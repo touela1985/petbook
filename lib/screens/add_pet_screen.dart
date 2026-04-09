@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -141,6 +142,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
         photoPath: _pickedImage?.path ?? oldPet.photoPath,
         photoBase64: photoBase64 ?? oldPet.photoBase64,
         photoUrl: photoUrl,
+        userId: oldPet.userId,
       );
     } else {
       // Generate a stable storage key to use as path in Firebase Storage.
@@ -158,6 +160,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
         photoPath: _pickedImage?.path,
         photoBase64: photoBase64,
         photoUrl: photoUrl,
+        userId: FirebaseAuth.instance.currentUser?.uid,
       );
     }
 

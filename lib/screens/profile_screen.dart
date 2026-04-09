@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
 
 import '../data/found_pet_report_repository.dart';
 import '../data/lost_pet_report_repository.dart';
+import '../services/auth_service.dart';
+import '../services/profile_service.dart';
 import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
 
@@ -29,6 +30,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final LostPetReportRepository _lostRepo = LostPetReportRepository();
   final FoundPetReportRepository _foundRepo = FoundPetReportRepository();
   final ImagePicker _picker = ImagePicker();
+  final ProfileService _profileService = ProfileService();
 
   String _name = '';
   String _location = '';
@@ -48,39 +50,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadAll() async {
-    final prefs = await SharedPreferences.getInstance();
+    final profileData = await _profileService.load();
     final lost = await _lostRepo.getReports();
     final found = await _foundRepo.getReports();
 
     if (!mounted) return;
 
     setState(() {
-      _name = prefs.getString('profile_name') ?? '';
-      _location = prefs.getString('profile_location') ?? '';
-      _phone = prefs.getString('profile_phone') ?? '';
-      _email = prefs.getString('profile_email') ?? '';
-      _photoBase64 = prefs.getString('profile_photo');
-      _photoUrl = prefs.getString('profile_photo_url');
-      _preferredContact =
-          prefs.getString('profile_preferred_contact') ?? 'all';
+      _name = profileData.name;
+      _location = profileData.location;
+      _phone = profileData.phone;
+      _email = profileData.email;
+      _photoBase64 = profileData.photoBase64;
+      _photoUrl = profileData.photoUrl;
+      _preferredContact = profileData.preferredContact;
       _lostCount = lost.length;
       _foundCount = found.length;
     });
   }
 
   Future<void> _saveProfileFields() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('profile_name', _name);
-    await prefs.setString('profile_location', _location);
-    await prefs.setString('profile_phone', _phone);
-    await prefs.setString('profile_email', _email);
-    await prefs.setString('profile_preferred_contact', _preferredContact);
-
-    if (_photoBase64 != null && _photoBase64!.isNotEmpty) {
-      await prefs.setString('profile_photo', _photoBase64!);
-    } else {
-      await prefs.remove('profile_photo');
-    }
+    await _profileService.save(
+      name: _name,
+      location: _location,
+      phone: _phone,
+      email: _email,
+      preferredContact: _preferredContact,
+      photoBase64: _photoBase64,
+    );
   }
 
   Future<void> _pickImage() async {
@@ -94,16 +91,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (!mounted) return;
 
-    // Upload to Firebase Storage
-    final prefs = await SharedPreferences.getInstance();
-    String? profileId = prefs.getString('profile_id');
-    if (profileId == null) {
-      profileId = const Uuid().v4();
-      await prefs.setString('profile_id', profileId);
-    }
+    // Upload to Firebase Storage — use uid as stable storage path
+    final profileId = FirebaseAuth.instance.currentUser?.uid ?? 'unknown';
     final url = await StorageService.uploadProfileImage(bytes, profileId);
     if (url != null) {
-      await prefs.setString('profile_photo_url', url);
+      await _profileService.savePhotoUrl(url);
     }
 
     if (!mounted) return;
@@ -624,14 +616,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _onLogoutTap(bool isEl) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          isEl ? 'Το logout θα προστεθεί σύντομα.' : 'Logout will be added soon.',
-        ),
-      ),
-    );
+  Future<void> _onLogoutTap(bool isEl) async {
+    await AuthService().signOut();
   }
 
   String _preferredContactLabel(bool isEl) {

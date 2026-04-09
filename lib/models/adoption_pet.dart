@@ -9,6 +9,7 @@ class AdoptionPet {
   final String? photoPath;
   final String? photoUrl;
   final bool adopted;
+  final String? userId;
 
   AdoptionPet({
     required this.id,
@@ -21,6 +22,7 @@ class AdoptionPet {
     this.photoPath,
     this.photoUrl,
     this.adopted = false,
+    this.userId,
   });
 
   Map<String, dynamic> toJson() {
@@ -35,6 +37,7 @@ class AdoptionPet {
       'photoPath': photoPath,
       'photoUrl': photoUrl,
       'adopted': adopted,
+      'userId': userId,
     };
   }
 
@@ -50,6 +53,7 @@ class AdoptionPet {
       photoPath: json['photoPath'],
       photoUrl: json['photoUrl'] as String?,
       adopted: json['adopted'] ?? false,
+      userId: json['userId'] as String?,
     );
   }
 }

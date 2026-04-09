@@ -10,6 +10,7 @@ class FoundPetReport {
   final String? photoUrl;
   final double? latitude;
   final double? longitude;
+  final String? userId;
 
   FoundPetReport({
     required this.id,
@@ -23,6 +24,7 @@ class FoundPetReport {
     this.photoUrl,
     this.latitude,
     this.longitude,
+    this.userId,
   });
 
   Map<String, dynamic> toJson() {
@@ -38,6 +40,7 @@ class FoundPetReport {
       'photoUrl': photoUrl,
       'latitude': latitude,
       'longitude': longitude,
+      'userId': userId,
     };
   }
 
@@ -54,6 +57,7 @@ class FoundPetReport {
       photoUrl: json['photoUrl'] as String?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
+      userId: json['userId'] as String?,
     );
   }
 }
