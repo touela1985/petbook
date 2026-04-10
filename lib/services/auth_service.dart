@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'profile_service.dart';
+
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -36,6 +38,7 @@ class AuthService {
   }
 
   Future<void> signOut() async {
+    await ProfileService().clearFcmToken();
     await _auth.signOut();
   }
 

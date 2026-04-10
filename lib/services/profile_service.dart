@@ -153,6 +153,16 @@ class ProfileService {
     } catch (_) {}
   }
 
+  Future<void> clearFcmToken() async {
+    try {
+      final uid = _uid;
+      if (uid == null) return;
+      await _firestore.collection(_collection).doc(uid).update({
+        'fcmToken': FieldValue.delete(),
+      });
+    } catch (_) {}
+  }
+
   // ─── Helper ──────────────────────────────────────────────────────────────
 
   String _prefer(String? remote, String local) {

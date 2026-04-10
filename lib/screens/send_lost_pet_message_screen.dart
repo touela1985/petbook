@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
@@ -21,7 +22,6 @@ class SendLostPetMessageScreen extends StatefulWidget {
 
 class _SendLostPetMessageScreenState extends State<SendLostPetMessageScreen> {
   final LostPetMessageRepository _repo = LostPetMessageRepository();
-  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
   final Uuid _uuid = const Uuid();
 
@@ -32,43 +32,78 @@ class _SendLostPetMessageScreenState extends State<SendLostPetMessageScreen> {
     return name.isEmpty ? 'Lost pet' : name;
   }
 
-  Future<void> _sendMessage() async {
-    final senderName = _nameController.text.trim();
-    final messageText = _messageController.text.trim();
+  bool get _isEl => Localizations.localeOf(context).languageCode == 'el';
 
-    if (messageText.isEmpty) {
+  Future<void> _sendMessage() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    // Auth guard — do not allow anonymous sends.
+    if (currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please write a message first.'),
+        SnackBar(
+          content: Text(
+            _isEl
+                ? 'Πρέπει να είσαι συνδεδεμένος για να στείλεις μήνυμα.'
+                : 'You must be logged in to send a message.',
+          ),
         ),
       );
       return;
     }
 
-    setState(() {
-      _isSaving = true;
-    });
+    final messageText = _messageController.text.trim();
+
+    if (messageText.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isEl ? 'Γράψε ένα μήνυμα πρώτα.' : 'Please write a message first.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Safety: do not send if receiverUserId is null (report has no owner).
+    final receiverUserId = widget.report.userId;
+    if (receiverUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isEl
+                ? 'Δεν είναι δυνατή η αποστολή μηνύματος για αυτή την αναφορά.'
+                : 'Cannot send a message for this report.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
 
     final message = LostPetMessage(
       id: _uuid.v4(),
       reportId: widget.report.id,
-      senderName: senderName.isEmpty ? 'Anonymous' : senderName,
+      senderName: currentUser.email ?? currentUser.uid,
+      senderUserId: currentUser.uid,
+      receiverUserId: receiverUserId,
       message: messageText,
       createdAt: DateTime.now(),
       isRead: false,
     );
 
     await _repo.addMessage(message);
+    // TODO Step 20: trigger push notification to receiverUserId via Cloud Function
 
     if (!mounted) return;
 
-    setState(() {
-      _isSaving = false;
-    });
+    setState(() => _isSaving = false);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Message sent successfully.'),
+      SnackBar(
+        content: Text(
+          _isEl ? 'Το μήνυμα στάλθηκε.' : 'Message sent successfully.',
+        ),
       ),
     );
 
@@ -77,7 +112,6 @@ class _SendLostPetMessageScreenState extends State<SendLostPetMessageScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
     _messageController.dispose();
     super.dispose();
   }
@@ -87,7 +121,7 @@ class _SendLostPetMessageScreenState extends State<SendLostPetMessageScreen> {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Send Message'),
+        title: Text(_isEl ? 'Αποστολή μηνύματος' : 'Send Message'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -103,7 +137,9 @@ class _SendLostPetMessageScreenState extends State<SendLostPetMessageScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Send a message about $_petName',
+                  _isEl
+                      ? 'Μήνυμα για: $_petName'
+                      : 'Send a message about $_petName',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
@@ -111,28 +147,25 @@ class _SendLostPetMessageScreenState extends State<SendLostPetMessageScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Use this to share useful information with the pet owner.',
-                  style: TextStyle(
+                Text(
+                  _isEl
+                      ? 'Μοιράσου χρήσιμες πληροφορίες με τον ιδιοκτήτη.'
+                      : 'Use this to share useful information with the pet owner.',
+                  style: const TextStyle(
                     color: AppTheme.textSecondary,
                     height: 1.35,
                   ),
                 ),
                 const SizedBox(height: 18),
                 TextField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Your name (optional)',
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
                   controller: _messageController,
                   maxLines: 6,
-                  decoration: const InputDecoration(
-                    labelText: 'Message',
+                  decoration: InputDecoration(
+                    labelText: _isEl ? 'Μήνυμα' : 'Message',
                     alignLabelWithHint: true,
-                    hintText: 'Example: I think I saw this pet near the marina.',
+                    hintText: _isEl
+                        ? 'π.χ. Νομίζω ότι είδα αυτό το ζωάκι κοντά στη μαρίνα.'
+                        : 'Example: I think I saw this pet near the marina.',
                   ),
                 ),
                 const SizedBox(height: 22),
@@ -147,7 +180,11 @@ class _SendLostPetMessageScreenState extends State<SendLostPetMessageScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.send),
-                    label: Text(_isSaving ? 'Sending...' : 'Send Message'),
+                    label: Text(
+                      _isSaving
+                          ? (_isEl ? 'Αποστολή...' : 'Sending...')
+                          : (_isEl ? 'Αποστολή' : 'Send Message'),
+                    ),
                   ),
                 ),
               ],
