@@ -1,1 +1,28 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"petbook-app-88a65","appId":"1:251231609452:android:b2cf7320348c4debd16e49","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"petbook-app-88a65","configurations":{"android":"1:251231609452:android:b2cf7320348c4debd16e49","ios":"1:251231609452:ios:d9cb25f179e91221d16e49","macos":"1:251231609452:ios:d9cb25f179e91221d16e49","web":"1:251231609452:web:7ffc54ef924b7961d16e49","windows":"1:251231609452:web:d88d05d70dfd1cfbd16e49"}}}}}}
+{
+  "functions": {
+    "source": "functions"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "petbook-app-88a65",
+          "appId": "1:251231609452:android:b2cf7320348c4debd16e49",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "petbook-app-88a65",
+          "configurations": {
+            "android": "1:251231609452:android:b2cf7320348c4debd16e49",
+            "ios": "1:251231609452:ios:d9cb25f179e91221d16e49",
+            "macos": "1:251231609452:ios:d9cb25f179e91221d16e49",
+            "web": "1:251231609452:web:7ffc54ef924b7961d16e49",
+            "windows": "1:251231609452:web:d88d05d70dfd1cfbd16e49"
+          }
+        }
+      }
+    }
+  }
+}

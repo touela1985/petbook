@@ -155,6 +155,7 @@ class _AddLostPetReportScreenState
         );
 
         await _repo.addReport(report);
+        // TODO Step 18: trigger lost_reports topic notification via Cloud Function
       } else {
         String? uploadedUrl;
         if (_selectedImage != null) {

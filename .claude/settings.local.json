@@ -3,7 +3,8 @@
     "allow": [
       "Bash(grep:*)",
       "Bash(flutter pub:*)",
-      "Bash(flutter analyze:*)"
+      "Bash(flutter analyze:*)",
+      "Bash(git config:*)"
     ]
   }
 }

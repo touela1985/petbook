@@ -48,10 +48,14 @@ class NotificationService {
 
     // 4. Save token immediately when auth state becomes logged-in.
     //    Covers: app restart with existing session + fresh login.
+    //    Also subscribes/unsubscribes from the lost_reports FCM topic.
     FirebaseAuth.instance.authStateChanges().listen((user) async {
       if (user != null) {
         final token = await _fcm.getToken();
         if (token != null) await _saveToken(token);
+        await subscribeToLostReports();
+      } else {
+        await unsubscribeFromLostReports();
       }
     });
 
@@ -141,6 +145,16 @@ class NotificationService {
         iOS: DarwinNotificationDetails(),
       ),
     );
+  }
+
+  // ─── Topic subscriptions ──────────────────────────────────────────────────
+
+  Future<void> subscribeToLostReports() async {
+    await _fcm.subscribeToTopic('lost_reports');
+  }
+
+  Future<void> unsubscribeFromLostReports() async {
+    await _fcm.unsubscribeFromTopic('lost_reports');
   }
 
   // ─── Token persistence ────────────────────────────────────────────────────
