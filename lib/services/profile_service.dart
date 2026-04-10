@@ -138,6 +138,21 @@ class ProfileService {
     } catch (_) {}
   }
 
+  Future<void> saveFcmToken(String token) async {
+    try {
+      final uid = _uid;
+      if (uid != null) {
+        await _firestore.collection(_collection).doc(uid).set(
+          {
+            'fcmToken': token,
+            'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
+      }
+    } catch (_) {}
+  }
+
   // ─── Helper ──────────────────────────────────────────────────────────────
 
   String _prefer(String? remote, String local) {

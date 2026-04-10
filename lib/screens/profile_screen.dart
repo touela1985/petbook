@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import '../data/found_pet_report_repository.dart';
 import '../data/lost_pet_report_repository.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 import '../services/profile_service.dart';
 import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
@@ -620,6 +621,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await AuthService().signOut();
   }
 
+  // ─── DEBUG — remove after notification testing ───────────────────────────
+  Future<void> _debugTestNotification() async {
+    await NotificationService.instance.debugGetAndPrintToken();
+    await NotificationService.instance.debugShowTestNotification();
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   String _preferredContactLabel(bool isEl) {
     switch (_preferredContact) {
       case 'call':
@@ -869,6 +877,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () => _onLogoutTap(isEl),
               titleColor: const Color(0xFFC95C5C),
             ),
+            // ── DEBUG: remove after notification testing ─────────────────
+            const SizedBox(height: 16),
+            _profileRowCard(
+              leading: Icons.notifications_active_rounded,
+              leadingColor: Colors.orange,
+              title: '[DEBUG] Test Notification',
+              trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+              titleColor: Colors.orange,
+              onTap: _debugTestNotification,
+            ),
+            // ─────────────────────────────────────────────────────────────
           ],
         ),
       ),
