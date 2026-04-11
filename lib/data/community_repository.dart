@@ -91,6 +91,23 @@ class CommunityRepository {
     await saveTips(tips);
   }
 
+  /// Removes all places and tips that were created before ownership support
+  /// (i.e. records where userId is null). Safe to call on every launch —
+  /// once purged, subsequent calls are no-ops.
+  Future<void> purgeLegacyRecords() async {
+    final places = await getPlaces();
+    final validPlaces = places.where((p) => p.userId != null).toList();
+    if (validPlaces.length != places.length) {
+      await savePlaces(validPlaces);
+    }
+
+    final tips = await getTips();
+    final validTips = tips.where((t) => t.userId != null).toList();
+    if (validTips.length != tips.length) {
+      await saveTips(validTips);
+    }
+  }
+
   Future<void> clearAllCommunityData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_placesKey);

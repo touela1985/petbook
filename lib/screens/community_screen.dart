@@ -35,6 +35,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _loadCommunityData() async {
+    await _repository.purgeLegacyRecords();
+
     final places = await _repository.getPlaces();
     final tips = await _repository.getTips();
 
