@@ -101,6 +101,18 @@ class FoundPetReportRepository {
     userId: uid,
   );
 
+  Future<FoundPetReport?> getReportById(String id) async {
+    // 1. Firestore — single document fetch
+    try {
+      final doc = await _firestore.collection(_collection).doc(id).get();
+      if (doc.exists) return FoundPetReport.fromJson(doc.data()!);
+    } catch (_) {}
+
+    // 2. Local fallback
+    final localMap = await _loadLocal();
+    return localMap[id];
+  }
+
   Future<void> saveReports(List<FoundPetReport> reports) async {
     await _saveLocal(reports);
   }

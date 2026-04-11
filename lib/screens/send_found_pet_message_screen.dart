@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
@@ -21,63 +22,106 @@ class SendFoundPetMessageScreen extends StatefulWidget {
 
 class _SendFoundPetMessageScreenState extends State<SendFoundPetMessageScreen> {
   final FoundPetMessageRepository _repo = FoundPetMessageRepository();
-  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
   final Uuid _uuid = const Uuid();
 
   bool _isSaving = false;
 
+  bool get _isEl => Localizations.localeOf(context).languageCode == 'el';
+
   String get _reportTitle {
     final type = widget.report.type.trim();
-    return type.isEmpty ? 'Found pet' : type;
+    return type.isEmpty ? (_isEl ? 'Βρέθηκε ζώο' : 'Found pet') : type;
   }
 
   Future<void> _sendMessage() async {
-    final senderName = _nameController.text.trim();
-    final messageText = _messageController.text.trim();
+    final user = FirebaseAuth.instance.currentUser;
 
-    if (messageText.isEmpty) {
+    if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please write a message first.'),
+        SnackBar(
+          content: Text(
+            _isEl
+                ? 'Πρέπει να είσαι συνδεδεμένος για να στείλεις μήνυμα.'
+                : 'You must be logged in to send a message.',
+          ),
         ),
       );
       return;
     }
 
-    setState(() {
-      _isSaving = true;
-    });
+    final receiverUserId = widget.report.userId;
+    if (receiverUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isEl
+                ? 'Δεν είναι δυνατή η αποστολή μηνύματος για αυτή την αναφορά.'
+                : 'Cannot send a message for this report.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final messageText = _messageController.text.trim();
+
+    if (messageText.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isEl ? 'Γράψε ένα μήνυμα πρώτα.' : 'Please write a message first.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
 
     final message = FoundPetMessage(
       id: _uuid.v4(),
       reportId: widget.report.id,
-      senderName: senderName.isEmpty ? 'Anonymous' : senderName,
-      message: messageText,
-      createdAt: DateTime.now(),
+      text: messageText,
+      senderName: user.email ?? user.uid,
+      timestamp: DateTime.now(),
+      senderUserId: user.uid,
+      receiverUserId: receiverUserId,
+      reportOwnerUserId: receiverUserId,
       isRead: false,
     );
 
-    await _repo.addMessage(message);
+    final firestoreOk = await _repo.addMessage(message);
 
     if (!mounted) return;
 
-    setState(() {
-      _isSaving = false;
-    });
+    setState(() => _isSaving = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Message sent successfully.'),
-      ),
-    );
-
-    Navigator.pop(context, true);
+    if (firestoreOk) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isEl ? 'Το μήνυμα στάλθηκε.' : 'Message sent successfully.',
+          ),
+        ),
+      );
+      Navigator.pop(context, true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isEl
+                ? 'Σφάλμα αποστολής. Έλεγξε τη σύνδεσή σου και δοκίμασε ξανά.'
+                : 'Send failed. Check your connection and try again.',
+          ),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
     _messageController.dispose();
     super.dispose();
   }
@@ -87,7 +131,7 @@ class _SendFoundPetMessageScreenState extends State<SendFoundPetMessageScreen> {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Send Message'),
+        title: Text(_isEl ? 'Αποστολή μηνύματος' : 'Send Message'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -103,7 +147,9 @@ class _SendFoundPetMessageScreenState extends State<SendFoundPetMessageScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Send a message about $_reportTitle',
+                  _isEl
+                      ? 'Μήνυμα για: $_reportTitle'
+                      : 'Send a message about $_reportTitle',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
@@ -111,29 +157,25 @@ class _SendFoundPetMessageScreenState extends State<SendFoundPetMessageScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Use this to share helpful information with the finder.',
-                  style: TextStyle(
+                Text(
+                  _isEl
+                      ? 'Μοιράσου χρήσιμες πληροφορίες με τον ευρέτη.'
+                      : 'Use this to share helpful information with the finder.',
+                  style: const TextStyle(
                     color: AppTheme.textSecondary,
                     height: 1.35,
                   ),
                 ),
                 const SizedBox(height: 18),
                 TextField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Your name (optional)',
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
                   controller: _messageController,
                   maxLines: 6,
-                  decoration: const InputDecoration(
-                    labelText: 'Message',
+                  decoration: InputDecoration(
+                    labelText: _isEl ? 'Μήνυμα' : 'Message',
                     alignLabelWithHint: true,
-                    hintText:
-                        'Example: I think this pet belongs to someone near the marina.',
+                    hintText: _isEl
+                        ? 'π.χ. Νομίζω ότι αυτό το ζωάκι ανήκει σε κάποιον κοντά στη μαρίνα.'
+                        : 'Example: I think this pet belongs to someone near the marina.',
                   ),
                 ),
                 const SizedBox(height: 22),
@@ -148,7 +190,11 @@ class _SendFoundPetMessageScreenState extends State<SendFoundPetMessageScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.send),
-                    label: Text(_isSaving ? 'Sending...' : 'Send Message'),
+                    label: Text(
+                      _isSaving
+                          ? (_isEl ? 'Αποστολή...' : 'Sending...')
+                          : (_isEl ? 'Αποστολή' : 'Send Message'),
+                    ),
                   ),
                 ),
               ],

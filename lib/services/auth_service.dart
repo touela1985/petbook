@@ -68,8 +68,8 @@ class AuthService {
     await prefs.remove('found_pet_reports');
     await prefs.remove('adoption_pets');
     await prefs.remove('lost_pet_messages');
+    await prefs.remove('found_pet_messages');
 
-    // NOTE: 'found_pet_messages' is LOCAL-ONLY (no Firestore) — do NOT clear on logout.
     // NOTE: 'community_places' / 'community_tips' are LOCAL-ONLY — do NOT clear on logout.
     // NOTE: 'pet_health_events' is LOCAL-ONLY — isolation handled via userId field filtering.
   }

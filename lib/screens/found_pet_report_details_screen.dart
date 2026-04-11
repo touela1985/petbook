@@ -37,8 +37,9 @@ class _FoundPetReportDetailsScreenState
   }
 
   Future<void> _loadMessageStats() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
     final messages =
-        await _messageRepository.getMessagesForReport(widget.report.id);
+        await _messageRepository.getMessagesForReport(widget.report.id, uid);
     if (!mounted) return;
     setState(() {
       _messageCount = messages.length;
