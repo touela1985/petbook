@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -25,6 +27,29 @@ class NotificationService {
   static const _channelId = 'petbook_default_channel';
   static const _channelName = 'Petbook Notifications';
 
+  // ─── Notification tap state ──────────────────────────────────────────────
+
+  /// Stores the tap data when the app was launched from a terminated state
+  /// by tapping a notification. Consumed once by MainNavigation.
+  Map<String, String>? _pendingTap;
+
+  /// Broadcasts tap events when the app is in background or foreground.
+  final StreamController<Map<String, String>> _tapController =
+      StreamController<Map<String, String>>.broadcast();
+
+  /// Returns and clears the pending tap (terminated-app case).
+  /// Call once from MainNavigation.initState().
+  Map<String, String>? consumePendingTap() {
+    final data = _pendingTap;
+    _pendingTap = null;
+    return data;
+  }
+
+  /// Stream of notification taps for background and foreground cases.
+  Stream<Map<String, String>> get onNotificationTap => _tapController.stream;
+
+  // ─── Initialization ───────────────────────────────────────────────────────
+
   Future<void> initialize() async {
     // Register the background message handler.
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
@@ -43,10 +68,22 @@ class NotificationService {
       sound: true,
     );
 
-    // 3. Set up flutter_local_notifications (foreground display on both platforms).
+    // 3. Set up flutter_local_notifications (foreground display + tap callback).
     await _setupLocalNotifications();
 
-    // 4. Save token immediately when auth state becomes logged-in.
+    // 4. Terminated app: check if app was launched by tapping a notification.
+    final initialMessage = await _fcm.getInitialMessage();
+    if (initialMessage != null) {
+      _pendingTap = _extractTapData(initialMessage.data);
+    }
+
+    // 5. Background app: notification tapped while app was minimized.
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      final tapData = _extractTapData(message.data);
+      if (tapData != null) _tapController.add(tapData);
+    });
+
+    // 6. Save token immediately when auth state becomes logged-in.
     //    Covers: app restart with existing session + fresh login.
     //    Also subscribes/unsubscribes from the lost_reports FCM topic.
     FirebaseAuth.instance.authStateChanges().listen((user) async {
@@ -59,7 +96,7 @@ class NotificationService {
       }
     });
 
-    // 5. Token refresh listener — FCM may rotate the token at any time.
+    // 7. Token refresh listener — FCM may rotate the token at any time.
     //    Only saves if a user is currently logged in.
     _fcm.onTokenRefresh.listen((newToken) async {
       if (FirebaseAuth.instance.currentUser != null) {
@@ -67,10 +104,14 @@ class NotificationService {
       }
     });
 
-    // 6. Foreground message handler — show a local notification banner.
+    // 8. Foreground message handler — show a local notification banner with
+    //    the data payload encoded in the notification payload field so that
+    //    a tap on the banner can be routed to the correct screen.
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       final notification = message.notification;
-      if (notification != null) _showLocalNotification(notification);
+      if (notification != null) {
+        _showLocalNotification(notification, message.data);
+      }
     });
   }
 
@@ -86,6 +127,7 @@ class NotificationService {
         android: androidSettings,
         iOS: iosSettings,
       ),
+      onDidReceiveNotificationResponse: _onLocalNotificationTap,
     );
 
     // Android requires an explicit notification channel (API 26+).
@@ -102,21 +144,53 @@ class NotificationService {
     }
   }
 
-  void _showLocalNotification(RemoteNotification notification) {
+  /// Handles taps on local notification banners (foreground case on Android).
+  void _onLocalNotificationTap(NotificationResponse response) {
+    final payloadStr = response.payload;
+    if (payloadStr == null || payloadStr.isEmpty) return;
+    try {
+      final decoded = jsonDecode(payloadStr) as Map<String, dynamic>;
+      final tapData = _extractTapData(decoded);
+      if (tapData != null) _tapController.add(tapData);
+    } catch (_) {}
+  }
+
+  void _showLocalNotification(
+    RemoteNotification notification,
+    Map<String, dynamic> data,
+  ) {
+    final tapData = _extractTapData(data);
+    final payload = tapData != null ? jsonEncode(tapData) : null;
+
     _localNotifications.show(
       notification.hashCode,
       notification.title,
       notification.body,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
+      NotificationDetails(
+        android: const AndroidNotificationDetails(
           _channelId,
           _channelName,
           importance: Importance.high,
           priority: Priority.high,
         ),
-        iOS: DarwinNotificationDetails(),
+        iOS: const DarwinNotificationDetails(),
       ),
+      payload: payload,
     );
+  }
+
+  // ─── Payload parsing ─────────────────────────────────────────────────────
+
+  /// Extracts {type, reportId} from the FCM data map.
+  /// Returns null if any required field is missing, empty, or unsupported.
+  Map<String, String>? _extractTapData(Map<String, dynamic> data) {
+    final type = (data['type'] as String?)?.trim();
+    final reportId = (data['reportId'] as String?)?.trim();
+    if (type == null || type.isEmpty || reportId == null || reportId.isEmpty) {
+      return null;
+    }
+    if (type != 'new_lost_report' && type != 'new_lost_message') return null;
+    return {'type': type, 'reportId': reportId};
   }
 
   // ─── Debug helpers (temporary — remove after testing) ────────────────────

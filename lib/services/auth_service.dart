@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'profile_service.dart';
 
@@ -38,8 +39,39 @@ class AuthService {
   }
 
   Future<void> signOut() async {
+    // Capture uid before any sign-out step invalidates auth state.
+    final uid = _auth.currentUser?.uid;
+
+    // 1. Remove FCM token from Firestore so no more notifications are sent.
     await ProfileService().clearFcmToken();
+
+    // 2. Clear locally cached profile data for this user.
+    await ProfileService().clearLocalData(uid);
+
+    // 3. Clear Firestore-backed local caches (safe to delete — Firestore is source of truth).
+    await _clearLocalCaches(uid);
+
+    // 4. Sign out from Firebase Auth.
     await _auth.signOut();
+  }
+
+  Future<void> _clearLocalCaches(String? uid) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // User-scoped caches.
+    if (uid != null) {
+      await prefs.remove('pets_$uid');
+    }
+
+    // Global caches backed by Firestore — safe to clear, will reload on next login.
+    await prefs.remove('lost_pet_reports');
+    await prefs.remove('found_pet_reports');
+    await prefs.remove('adoption_pets');
+    await prefs.remove('lost_pet_messages');
+
+    // NOTE: 'found_pet_messages' is LOCAL-ONLY (no Firestore) — do NOT clear on logout.
+    // NOTE: 'community_places' / 'community_tips' are LOCAL-ONLY — do NOT clear on logout.
+    // NOTE: 'pet_health_events' is LOCAL-ONLY — isolation handled via userId field filtering.
   }
 
   String _mapErrorCode(String code) {

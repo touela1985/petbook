@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -299,7 +300,10 @@ Contact: $contact
 Shared via Petbook
 ''';
 
-    await Share.share(text);
+    await Share.share(
+      text,
+      subject: _isEl ? 'Ειδοποίηση απώλειας – Petbook' : 'Lost pet alert – Petbook',
+    );
   }
 
   Future<void> _deleteSighting(LostPetSighting sighting) async {
@@ -430,6 +434,8 @@ Shared via Petbook
   Widget build(BuildContext context) {
     final isResolved = _report.isResolved;
     final isEl = _isEl;
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final isOwner = currentUser != null && currentUser.uid == _report.userId;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -638,7 +644,7 @@ Shared via Petbook
                         onOpenMap: hasSightingCoordinates
                             ? () => _openSightingMapScreen(sighting)
                             : null,
-                        onDelete: () => _deleteSighting(sighting),
+                        onDelete: isOwner ? () => _deleteSighting(sighting) : null,
                       );
                     }),
                   ],
@@ -674,24 +680,25 @@ Shared via Petbook
                             ],
                           ),
                         ),
-                        TextButton(
-                          onPressed: () => _openMessages(context),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
+                        if (isOwner)
+                          TextButton(
+                            onPressed: () => _openMessages(context),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
+                            child: Text(isEl ? 'Προβολή' : 'View'),
                           ),
-                          child: Text(isEl ? 'Προβολή' : 'View'),
-                        ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (!isResolved) ...[
+                  if (isOwner && !isResolved) ...[
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
@@ -910,7 +917,7 @@ class _SightingEntryCard extends StatelessWidget {
   final String formattedDateTime;
   final String? locationLabel;
   final VoidCallback? onOpenMap;
-  final VoidCallback onDelete;
+  final VoidCallback? onDelete;
 
   const _SightingEntryCard({
     required this.isEl,
@@ -1044,21 +1051,23 @@ class _SightingEntryCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              IconButton(
-                onPressed: onDelete,
-                splashRadius: 18,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minHeight: 32,
-                  minWidth: 32,
+              if (onDelete != null) ...[
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: onDelete,
+                  splashRadius: 18,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minHeight: 32,
+                    minWidth: 32,
+                  ),
+                  icon: Icon(
+                    Icons.delete_outline_rounded,
+                    size: 18,
+                    color: AppTheme.textSecondary.withOpacity(0.6),
+                  ),
                 ),
-                icon: Icon(
-                  Icons.delete_outline_rounded,
-                  size: 18,
-                  color: AppTheme.textSecondary.withOpacity(0.6),
-                ),
-              ),
+              ],
             ],
           ),
         ],

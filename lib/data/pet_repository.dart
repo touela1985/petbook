@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/pet.dart';
 
 class PetRepository {
-  static const _storageKey = 'pets';
+  // User-scoped key: 'pets_<uid>' — prevents cross-account leakage on same device.
   static const _collection = 'pets';
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -15,11 +15,19 @@ class PetRepository {
 
   List<Pet> getAll() => List.unmodifiable(_pets);
 
+  /// Clears the in-memory pet list. Called on logout so the next user
+  /// cannot see the previous user's pets before loadPets() runs.
+  void clearMemory() {
+    _pets.clear();
+  }
+
   // ─── Local helpers ───────────────────────────────────────────────────────
 
   Future<Map<String, Pet>> _loadLocal() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return {};
     final prefs = await SharedPreferences.getInstance();
-    final List<String>? petsJson = prefs.getStringList(_storageKey);
+    final List<String>? petsJson = prefs.getStringList('pets_$uid');
     if (petsJson == null) return {};
 
     final pets = petsJson
@@ -29,9 +37,11 @@ class PetRepository {
   }
 
   Future<void> _saveLocal(List<Pet> pets) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(
-      _storageKey,
+      'pets_$uid',
       pets.map((p) => jsonEncode(p.toJson())).toList(),
     );
   }

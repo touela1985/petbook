@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'firebase_options.dart';
@@ -32,10 +35,34 @@ class _PetbookAppState extends State<PetbookApp> {
 
   final PetRepository _repo = PetRepository();
 
+  StreamSubscription<User?>? _authSub;
+
   @override
   void initState() {
     super.initState();
     _loadAppData();
+
+    // Auth state listener — ensures in-memory pet list is always correct
+    // for the currently logged-in user, regardless of account switches.
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user != null) {
+        // User logged in: reload pets for this user.
+        _repo.loadPets().then((_) {
+          if (mounted) setState(() {});
+        });
+      } else {
+        // User logged out: clear in-memory pets so the next user
+        // cannot inherit the previous user's pet list.
+        _repo.clearMemory();
+        if (mounted) setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadAppData() async {

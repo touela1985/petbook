@@ -29,18 +29,23 @@ class ProfileService {
 
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
+  // User-scoped key helper — prevents cross-account profile leakage.
+  String _key(String base, String uid) => '${base}_$uid';
+
   // ─── Load ────────────────────────────────────────────────────────────────
 
   Future<ProfileData> load() async {
-    // 1. Local — always available
+    final uid = _uid;
     final prefs = await SharedPreferences.getInstance();
-    final localName = prefs.getString('profile_name') ?? '';
-    final localLocation = prefs.getString('profile_location') ?? '';
-    final localPhone = prefs.getString('profile_phone') ?? '';
-    final localEmail = prefs.getString('profile_email') ?? '';
-    final localContact = prefs.getString('profile_preferred_contact') ?? 'all';
-    final localPhotoBase64 = prefs.getString('profile_photo');
-    final localPhotoUrl = prefs.getString('profile_photo_url');
+
+    // 1. Local — scoped per user; empty if first login or after logout cleanup.
+    final localName = uid != null ? (prefs.getString(_key('profile_name', uid)) ?? '') : '';
+    final localLocation = uid != null ? (prefs.getString(_key('profile_location', uid)) ?? '') : '';
+    final localPhone = uid != null ? (prefs.getString(_key('profile_phone', uid)) ?? '') : '';
+    final localEmail = uid != null ? (prefs.getString(_key('profile_email', uid)) ?? '') : '';
+    final localContact = uid != null ? (prefs.getString(_key('profile_preferred_contact', uid)) ?? 'all') : 'all';
+    final localPhotoBase64 = uid != null ? prefs.getString(_key('profile_photo', uid)) : null;
+    final localPhotoUrl = uid != null ? prefs.getString(_key('profile_photo_url', uid)) : null;
 
     // 2. Firestore — best-effort
     String? remoteName;
@@ -51,7 +56,6 @@ class ProfileService {
     String? remotePhotoUrl;
 
     try {
-      final uid = _uid;
       if (uid != null) {
         final doc = await _firestore.collection(_collection).doc(uid).get();
         if (doc.exists) {
@@ -92,23 +96,26 @@ class ProfileService {
     required String preferredContact,
     String? photoBase64,
   }) async {
-    // 1. Local
+    final uid = _uid;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('profile_name', name);
-    await prefs.setString('profile_location', location);
-    await prefs.setString('profile_phone', phone);
-    await prefs.setString('profile_email', email);
-    await prefs.setString('profile_preferred_contact', preferredContact);
 
-    if (photoBase64 != null && photoBase64.isNotEmpty) {
-      await prefs.setString('profile_photo', photoBase64);
-    } else {
-      await prefs.remove('profile_photo');
+    // 1. Local — user-scoped
+    if (uid != null) {
+      await prefs.setString(_key('profile_name', uid), name);
+      await prefs.setString(_key('profile_location', uid), location);
+      await prefs.setString(_key('profile_phone', uid), phone);
+      await prefs.setString(_key('profile_email', uid), email);
+      await prefs.setString(_key('profile_preferred_contact', uid), preferredContact);
+
+      if (photoBase64 != null && photoBase64.isNotEmpty) {
+        await prefs.setString(_key('profile_photo', uid), photoBase64);
+      } else {
+        await prefs.remove(_key('profile_photo', uid));
+      }
     }
 
     // 2. Firestore — silent fail, no photoBase64
     try {
-      final uid = _uid;
       if (uid != null) {
         await _firestore.collection(_collection).doc(uid).set({
           'name': name,
@@ -122,13 +129,16 @@ class ProfileService {
   }
 
   Future<void> savePhotoUrl(String photoUrl) async {
-    // 1. Local
+    final uid = _uid;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('profile_photo_url', photoUrl);
+
+    // 1. Local — user-scoped
+    if (uid != null) {
+      await prefs.setString(_key('profile_photo_url', uid), photoUrl);
+    }
 
     // 2. Firestore — silent fail
     try {
-      final uid = _uid;
       if (uid != null) {
         await _firestore.collection(_collection).doc(uid).set(
           {'photoUrl': photoUrl},
@@ -161,6 +171,24 @@ class ProfileService {
         'fcmToken': FieldValue.delete(),
       });
     } catch (_) {}
+  }
+
+  /// Clears all locally cached profile data for [uid].
+  /// Called during logout — must receive uid before Firebase sign-out.
+  Future<void> clearLocalData(String? uid) async {
+    if (uid == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    for (final base in [
+      'profile_name',
+      'profile_location',
+      'profile_phone',
+      'profile_email',
+      'profile_preferred_contact',
+      'profile_photo',
+      'profile_photo_url',
+    ]) {
+      await prefs.remove(_key(base, uid));
+    }
   }
 
   // ─── Helper ──────────────────────────────────────────────────────────────

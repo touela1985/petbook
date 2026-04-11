@@ -80,7 +80,7 @@ class _AddLostPetReportScreenState
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+      lastDate: DateTime.now(),
     );
 
     if (picked != null) {

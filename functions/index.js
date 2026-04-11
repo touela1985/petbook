@@ -26,6 +26,10 @@ exports.onLostReportCreated = onDocumentCreated(
     try {
       await getMessaging().send({
         notification: { title: 'Νέο χαμένο ζωάκι', body },
+        data: {
+          type: 'new_lost_report',
+          reportId: event.params.reportId,
+        },
         topic: 'lost_reports',
       });
     } catch (err) {
@@ -86,11 +90,19 @@ exports.onLostPetMessageCreated = onDocumentCreated(
       ? `${senderName}: ${preview}`
       : 'Έλαβες νέο μήνυμα.';
 
+    // Guard: no reportId → cannot deep-link
+    const reportId = data.reportId;
+    if (!reportId) return;
+
     try {
       await getMessaging().send({
         notification: {
           title: 'Νέο μήνυμα για χαμένο ζωάκι',
           body,
+        },
+        data: {
+          type: 'new_lost_message',
+          reportId: reportId,
         },
         token: fcmToken,
       });

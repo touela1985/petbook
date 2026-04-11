@@ -4,6 +4,7 @@ class CommunityPlace {
   final String description;
   final String? imagePath;
   final String? imageUrl;
+  final String? userId;
 
   CommunityPlace({
     required this.id,
@@ -11,6 +12,7 @@ class CommunityPlace {
     required this.description,
     required this.imagePath,
     this.imageUrl,
+    this.userId,
   });
 
   factory CommunityPlace.create({
@@ -18,6 +20,7 @@ class CommunityPlace {
     required String description,
     String? imagePath,
     String? imageUrl,
+    String? userId,
   }) {
     return CommunityPlace(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -25,6 +28,7 @@ class CommunityPlace {
       description: description,
       imagePath: imagePath,
       imageUrl: imageUrl,
+      userId: userId,
     );
   }
 
@@ -34,6 +38,7 @@ class CommunityPlace {
     String? description,
     String? imagePath,
     String? imageUrl,
+    String? userId,
   }) {
     return CommunityPlace(
       id: id ?? this.id,
@@ -41,6 +46,7 @@ class CommunityPlace {
       description: description ?? this.description,
       imagePath: imagePath ?? this.imagePath,
       imageUrl: imageUrl ?? this.imageUrl,
+      userId: userId ?? this.userId,
     );
   }
 
@@ -51,6 +57,7 @@ class CommunityPlace {
       'description': description,
       'imagePath': imagePath,
       'imageUrl': imageUrl,
+      'userId': userId,
     };
   }
 
@@ -61,6 +68,7 @@ class CommunityPlace {
       description: json['description'] as String,
       imagePath: json['imagePath'] as String?,
       imageUrl: json['imageUrl'] as String?,
+      userId: json['userId'] as String?,
     );
   }
 }

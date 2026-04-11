@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../data/lost_pet_message_repository.dart';
@@ -23,9 +24,21 @@ class _LostPetMessagesScreenState extends State<LostPetMessagesScreen> {
   List<LostPetMessage> _messages = [];
   bool _isLoading = true;
 
+  bool get _isEl => Localizations.localeOf(context).languageCode == 'el';
+
   String get _petName {
     final name = widget.report.petName.trim();
-    return name.isEmpty ? 'Lost pet' : name;
+    return name.isEmpty ? (_isEl ? 'Χαμένο ζώο' : 'Lost pet') : name;
+  }
+
+  String? get _petType {
+    final t = widget.report.type.trim();
+    return t.isEmpty ? null : t;
+  }
+
+  String? get _location {
+    final l = widget.report.lastSeenLocation.trim();
+    return l.isEmpty ? null : l;
   }
 
   @override
@@ -55,23 +68,34 @@ class _LostPetMessagesScreenState extends State<LostPetMessagesScreen> {
     return '$day/$month/$year • $hour:$minute';
   }
 
+  bool _canDelete(LostPetMessage message) {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return false;
+    // Owner of the report OR sender of the message.
+    final isReportOwner = widget.report.userId == currentUser.uid;
+    final isMessageSender = message.senderUserId == currentUser.uid;
+    return isReportOwner || isMessageSender;
+  }
+
   Future<void> _deleteMessage(LostPetMessage message) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) {
         return AlertDialog(
-          title: const Text('Delete message'),
-          content: const Text(
-            'Are you sure you want to delete this message?',
+          title: Text(_isEl ? 'Διαγραφή μηνύματος' : 'Delete message'),
+          content: Text(
+            _isEl
+                ? 'Θέλεις σίγουρα να διαγράψεις αυτό το μήνυμα;'
+                : 'Are you sure you want to delete this message?',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+              child: Text(_isEl ? 'Ακύρωση' : 'Cancel'),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Delete'),
+              child: Text(_isEl ? 'Διαγραφή' : 'Delete'),
             ),
           ],
         );
@@ -84,141 +108,77 @@ class _LostPetMessagesScreenState extends State<LostPetMessagesScreen> {
     }
   }
 
-  void _openMessageDialog(LostPetMessage message) {
-    final sender = message.senderName.trim().isEmpty
-        ? 'Anonymous'
-        : message.senderName.trim();
-
-    showDialog(
-      context: context,
-      builder: (_) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  sender,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  _formatDateTime(message.createdAt),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  message.message,
-                  style: const TextStyle(
-                    height: 1.5,
-                    fontSize: 15,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Close'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildMessageCard(LostPetMessage message) {
     final sender = message.senderName.trim().isEmpty
-        ? 'Anonymous'
+        ? (_isEl ? 'Ανώνυμος' : 'Anonymous')
         : message.senderName.trim();
 
     return Material(
       color: AppTheme.surface,
       borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: () => _openMessageDialog(message),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppTheme.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppTheme.border),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppTheme.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    sender,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatDateTime(message.createdAt),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    message.message,
+                    style: const TextStyle(
+                      height: 1.4,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      sender,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatDateTime(message.createdAt),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      message.message,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        height: 1.4,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            ),
+            if (_canDelete(message))
               PopupMenuButton<String>(
                 onSelected: (value) async {
                   if (value == 'delete') {
                     await _deleteMessage(message);
                   }
                 },
-                itemBuilder: (_) => const [
+                itemBuilder: (_) => [
                   PopupMenuItem(
                     value: 'delete',
-                    child: Text('Delete'),
+                    child: Text(_isEl ? 'Διαγραφή' : 'Delete'),
                   ),
                 ],
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );
@@ -229,7 +189,7 @@ class _LostPetMessagesScreenState extends State<LostPetMessagesScreen> {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Messages'),
+        title: Text(_petName),
       ),
       body: RefreshIndicator(
         onRefresh: _loadMessages,
@@ -246,9 +206,9 @@ class _LostPetMessagesScreenState extends State<LostPetMessagesScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Report',
-                    style: TextStyle(
+                  Text(
+                    _isEl ? 'Αναφορά απώλειας' : 'Lost pet report',
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textSecondary,
@@ -263,6 +223,39 @@ class _LostPetMessagesScreenState extends State<LostPetMessagesScreen> {
                       color: AppTheme.textPrimary,
                     ),
                   ),
+                  if (_petType != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      _petType!,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                  if (_location != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 14,
+                          color: AppTheme.textSecondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            _location!,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppTheme.textSecondary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -276,18 +269,31 @@ class _LostPetMessagesScreenState extends State<LostPetMessagesScreen> {
               )
             else if (_messages.isEmpty)
               Container(
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 32,
+                  horizontal: 18,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.surface,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppTheme.border),
                 ),
-                child: const Text(
-                  'No messages yet.',
-                  style: TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.mail_outline_rounded,
+                      size: 36,
+                      color: AppTheme.textSecondary,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _isEl ? 'Δεν υπάρχουν μηνύματα ακόμα.' : 'No messages yet.',
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               )
             else

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -452,20 +453,26 @@ class _PlacesSection extends StatelessWidget {
                 'When users start adding pet-friendly spots, they will appear here.',
           )
         else
-          Column(
-            children: places
-                .map(
-                  (place) => Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: PlaceCard(
-                      place: place,
-                      isEl: isEl,
-                      onEdit: () => onEdit(place),
-                      onDelete: () => onDelete(place),
-                    ),
-                  ),
-                )
-                .toList(),
+          Builder(
+            builder: (context) {
+              final currentUid = FirebaseAuth.instance.currentUser?.uid;
+              return Column(
+                children: places
+                    .map(
+                      (place) => Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: PlaceCard(
+                          place: place,
+                          isEl: isEl,
+                          isOwner: currentUid != null && currentUid == place.userId,
+                          onEdit: () => onEdit(place),
+                          onDelete: () => onDelete(place),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              );
+            },
           ),
       ],
     );
@@ -592,20 +599,26 @@ class _TipsSection extends StatelessWidget {
             subtitleEn: 'Tips shared by users will appear here.',
           )
         else
-          Column(
-            children: tips
-                .map(
-                  (tip) => Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: TipCard(
-                      tip: tip,
-                      isEl: isEl,
-                      onEdit: () => onEdit(tip),
-                      onDelete: () => onDelete(tip),
-                    ),
-                  ),
-                )
-                .toList(),
+          Builder(
+            builder: (context) {
+              final currentUid = FirebaseAuth.instance.currentUser?.uid;
+              return Column(
+                children: tips
+                    .map(
+                      (tip) => Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: TipCard(
+                          tip: tip,
+                          isEl: isEl,
+                          isOwner: currentUid != null && currentUid == tip.userId,
+                          onEdit: () => onEdit(tip),
+                          onDelete: () => onDelete(tip),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              );
+            },
           ),
       ],
     );
@@ -690,6 +703,7 @@ class _EmptyStateCard extends StatelessWidget {
 class PlaceCard extends StatelessWidget {
   final CommunityPlace place;
   final bool isEl;
+  final bool isOwner;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -697,6 +711,7 @@ class PlaceCard extends StatelessWidget {
     super.key,
     required this.place,
     required this.isEl,
+    required this.isOwner,
     required this.onEdit,
     required this.onDelete,
   });
@@ -804,25 +819,26 @@ class PlaceCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        PopupMenuButton<String>(
-                          onSelected: (value) {
-                            if (value == 'edit') {
-                              onEdit();
-                            } else if (value == 'delete') {
-                              onDelete();
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: 'edit',
-                              child: Text(isEl ? 'Επεξεργασία' : 'Edit'),
-                            ),
-                            PopupMenuItem(
-                              value: 'delete',
-                              child: Text(isEl ? 'Διαγραφή' : 'Delete'),
-                            ),
-                          ],
-                        ),
+                        if (isOwner)
+                          PopupMenuButton<String>(
+                            onSelected: (value) {
+                              if (value == 'edit') {
+                                onEdit();
+                              } else if (value == 'delete') {
+                                onDelete();
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              PopupMenuItem(
+                                value: 'edit',
+                                child: Text(isEl ? 'Επεξεργασία' : 'Edit'),
+                              ),
+                              PopupMenuItem(
+                                value: 'delete',
+                                child: Text(isEl ? 'Διαγραφή' : 'Delete'),
+                              ),
+                            ],
+                          ),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -952,6 +968,7 @@ class _PlaceImage extends StatelessWidget {
 class TipCard extends StatelessWidget {
   final CommunityTip tip;
   final bool isEl;
+  final bool isOwner;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -959,6 +976,7 @@ class TipCard extends StatelessWidget {
     super.key,
     required this.tip,
     required this.isEl,
+    required this.isOwner,
     required this.onEdit,
     required this.onDelete,
   });
@@ -1052,25 +1070,26 @@ class TipCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        PopupMenuButton<String>(
-                          onSelected: (value) {
-                            if (value == 'edit') {
-                              onEdit();
-                            } else if (value == 'delete') {
-                              onDelete();
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: 'edit',
-                              child: Text(isEl ? 'Επεξεργασία' : 'Edit'),
-                            ),
-                            PopupMenuItem(
-                              value: 'delete',
-                              child: Text(isEl ? 'Διαγραφή' : 'Delete'),
-                            ),
-                          ],
-                        ),
+                        if (isOwner)
+                          PopupMenuButton<String>(
+                            onSelected: (value) {
+                              if (value == 'edit') {
+                                onEdit();
+                              } else if (value == 'delete') {
+                                onDelete();
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              PopupMenuItem(
+                                value: 'edit',
+                                child: Text(isEl ? 'Επεξεργασία' : 'Edit'),
+                              ),
+                              PopupMenuItem(
+                                value: 'delete',
+                                child: Text(isEl ? 'Διαγραφή' : 'Delete'),
+                              ),
+                            ],
+                          ),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -1232,6 +1251,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
             title: _titleCtrl.text.trim(),
             description: _descriptionCtrl.text.trim(),
             imagePath: _imagePath,
+            userId: FirebaseAuth.instance.currentUser?.uid,
           );
 
     if (_pickedImage != null) {
@@ -1402,6 +1422,7 @@ class _AddTipScreenState extends State<AddTipScreen> {
             title: _titleCtrl.text.trim(),
             body: _bodyCtrl.text.trim(),
             imagePath: _imagePath,
+            userId: FirebaseAuth.instance.currentUser?.uid,
           );
 
     if (_pickedImage != null) {

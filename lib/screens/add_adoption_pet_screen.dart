@@ -68,8 +68,7 @@ class _AddAdoptionPetScreenState extends State<AddAdoptionPetScreen> {
   }
 
   Future<void> _submit() async {
-    if (_nameController.text.trim().isEmpty ||
-        _locationController.text.trim().isEmpty ||
+    if (_locationController.text.trim().isEmpty ||
         _phoneController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -266,7 +265,7 @@ class _AddAdoptionPetScreenState extends State<AddAdoptionPetScreen> {
 
           TextField(
             controller: _nameController,
-            decoration: _dec(isEl ? 'Όνομα ζώου *' : 'Pet name'),
+            decoration: _dec(isEl ? 'Όνομα ζώου' : 'Pet name'),
           ),
 
           const SizedBox(height: 12),

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -212,12 +213,17 @@ Contact: $contact
 Shared via Petbook
 ''';
 
-    await Share.share(text);
+    await Share.share(
+      text,
+      subject: _isEl ? 'Ευρεθέν ζώο – Petbook' : 'Found pet alert – Petbook',
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isEl = _isEl;
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final isOwner = currentUser != null && currentUser.uid == widget.report.userId;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -401,10 +407,11 @@ Shared via Petbook
                             ],
                           ),
                         ),
-                        TextButton(
-                          onPressed: () => _openMessages(context),
-                          child: Text(isEl ? 'Προβολή' : 'View'),
-                        ),
+                        if (isOwner)
+                          TextButton(
+                            onPressed: () => _openMessages(context),
+                            child: Text(isEl ? 'Προβολή' : 'View'),
+                          ),
                       ],
                     ),
                   ),

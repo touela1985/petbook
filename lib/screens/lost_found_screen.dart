@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -552,6 +553,7 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
 
             final lostReports = snap.data![0] as List<LostPetReport>;
             final foundReports = snap.data![1] as List<FoundPetReport>;
+            final currentUser = FirebaseAuth.instance.currentUser;
 
             final activeLostReports =
                 lostReports.where((report) => !report.isResolved).toList();
@@ -624,6 +626,7 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
                         report: report,
                         userPosition: _userPosition,
                         isLoadingUserLocation: _isLoadingUserLocation,
+                        isOwner: currentUser != null && currentUser.uid == report.userId,
                         onTap: () => _openLostReportDetails(report),
                         onMessageTap: () => _openLostMessageScreen(report),
                         onSightingTap: () => _openSightingDialog(report),
@@ -662,6 +665,7 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
                         isEl: isEl,
                         report: report,
                         formattedDate: _formatDate(report.foundDate),
+                        isOwner: currentUser != null && currentUser.uid == report.userId,
                         onTap: () => _openFoundReportDetails(report),
                         onEdit: () => _editFoundPetReport(report),
                         onDelete: () => _deleteFoundReport(report),
@@ -1218,6 +1222,7 @@ class _LostReportCard extends StatelessWidget {
   final LostPetReport report;
   final Position? userPosition;
   final bool isLoadingUserLocation;
+  final bool isOwner;
   final VoidCallback onTap;
   final VoidCallback onMessageTap;
   final VoidCallback onSightingTap;
@@ -1229,6 +1234,7 @@ class _LostReportCard extends StatelessWidget {
     required this.report,
     required this.userPosition,
     required this.isLoadingUserLocation,
+    required this.isOwner,
     required this.onTap,
     required this.onMessageTap,
     required this.onSightingTap,
@@ -1272,7 +1278,10 @@ Contact: $contact
 Shared via Petbook
 ''';
 
-    await Share.share(text);
+    await Share.share(
+      text,
+      subject: isEl ? 'Ειδοποίηση απώλειας – Petbook' : 'Lost pet alert – Petbook',
+    );
   }
 
   String? _distanceText() {
@@ -1355,22 +1364,23 @@ Shared via Petbook
                                     : Icons.warning_amber_rounded,
                               ),
                               const Spacer(),
-                              PopupMenuButton<String>(
-                                onSelected: (value) {
-                                  if (value == 'edit') onEdit();
-                                  if (value == 'delete') onDelete();
-                                },
-                                itemBuilder: (context) => [
-                                  PopupMenuItem(
-                                    value: 'edit',
-                                    child: Text(isEl ? 'Επεξεργασία' : 'Edit'),
-                                  ),
-                                  PopupMenuItem(
-                                    value: 'delete',
-                                    child: Text(isEl ? 'Διαγραφή' : 'Delete'),
-                                  ),
-                                ],
-                              ),
+                              if (isOwner)
+                                PopupMenuButton<String>(
+                                  onSelected: (value) {
+                                    if (value == 'edit') onEdit();
+                                    if (value == 'delete') onDelete();
+                                  },
+                                  itemBuilder: (context) => [
+                                    PopupMenuItem(
+                                      value: 'edit',
+                                      child: Text(isEl ? 'Επεξεργασία' : 'Edit'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'delete',
+                                      child: Text(isEl ? 'Διαγραφή' : 'Delete'),
+                                    ),
+                                  ],
+                                ),
                             ],
                           ),
                           const SizedBox(height: 8),
@@ -1503,6 +1513,7 @@ class _FoundReportCard extends StatelessWidget {
   final bool isEl;
   final FoundPetReport report;
   final String formattedDate;
+  final bool isOwner;
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -1511,6 +1522,7 @@ class _FoundReportCard extends StatelessWidget {
     required this.isEl,
     required this.report,
     required this.formattedDate,
+    required this.isOwner,
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
@@ -1563,7 +1575,10 @@ Contact: $contact
 Shared via Petbook
 ''';
 
-    await Share.share(text);
+    await Share.share(
+      text,
+      subject: isEl ? 'Ευρεθέν ζώο – Petbook' : 'Found pet alert – Petbook',
+    );
   }
 
   @override
@@ -1614,22 +1629,23 @@ Shared via Petbook
                                 icon: Icons.favorite_rounded,
                               ),
                               const Spacer(),
-                              PopupMenuButton<String>(
-                                onSelected: (value) {
-                                  if (value == 'edit') onEdit();
-                                  if (value == 'delete') onDelete();
-                                },
-                                itemBuilder: (context) => [
-                                  PopupMenuItem(
-                                    value: 'edit',
-                                    child: Text(isEl ? 'Επεξεργασία' : 'Edit'),
-                                  ),
-                                  PopupMenuItem(
-                                    value: 'delete',
-                                    child: Text(isEl ? 'Διαγραφή' : 'Delete'),
-                                  ),
-                                ],
-                              ),
+                              if (isOwner)
+                                PopupMenuButton<String>(
+                                  onSelected: (value) {
+                                    if (value == 'edit') onEdit();
+                                    if (value == 'delete') onDelete();
+                                  },
+                                  itemBuilder: (context) => [
+                                    PopupMenuItem(
+                                      value: 'edit',
+                                      child: Text(isEl ? 'Επεξεργασία' : 'Edit'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'delete',
+                                      child: Text(isEl ? 'Διαγραφή' : 'Delete'),
+                                    ),
+                                  ],
+                                ),
                             ],
                           ),
                           const SizedBox(height: 6),

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../data/adoption_pet_repository.dart';
@@ -17,7 +18,15 @@ class AdoptionListScreen extends StatefulWidget {
 class _AdoptionListScreenState extends State<AdoptionListScreen> {
   final AdoptionPetRepository _repo = AdoptionPetRepository();
 
+  late Future<List<AdoptionPet>> _petsFuture;
+
   bool get _isEl => Localizations.localeOf(context).languageCode == 'el';
+
+  @override
+  void initState() {
+    super.initState();
+    _petsFuture = _loadPets();
+  }
 
   Future<List<AdoptionPet>> _loadPets() async {
     return _repo.getPets();
@@ -31,7 +40,9 @@ class _AdoptionListScreenState extends State<AdoptionListScreen> {
       ),
     );
     if (created == true) {
-      setState(() {});
+      setState(() {
+        _petsFuture = _loadPets();
+      });
     }
   }
 
@@ -54,36 +65,41 @@ class _AdoptionListScreenState extends State<AdoptionListScreen> {
       ),
     );
     if (updated == true) {
-      setState(() {});
+      setState(() {
+        _petsFuture = _loadPets();
+      });
     }
   }
 
   Future<void> _deleteAdoption(AdoptionPet pet) async {
     await _repo.deletePet(pet.id);
     if (mounted) {
-      setState(() {});
+      setState(() {
+        _petsFuture = _loadPets();
+      });
     }
   }
 
   Widget _petImage(AdoptionPet pet) {
-    return PetImageWidget(
-      photoUrl: pet.photoUrl,
-      photoPath: pet.photoPath,
+    return SizedBox(
       width: 82,
       height: 82,
-      fit: BoxFit.cover,
-      borderRadius: BorderRadius.circular(16),
-      placeholder: Container(
-        width: 82,
-        height: 82,
-        decoration: BoxDecoration(
-          color: AppTheme.primaryTeal.withOpacity(0.10),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Icon(
-          Icons.pets,
-          size: 34,
-          color: AppTheme.primaryTeal,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: PetImageWidget(
+          photoUrl: pet.photoUrl,
+          photoPath: pet.photoPath,
+          width: 82,
+          height: 82,
+          fit: BoxFit.cover,
+          placeholder: Container(
+            color: AppTheme.primaryTeal.withOpacity(0.10),
+            child: const Icon(
+              Icons.pets,
+              size: 34,
+              color: AppTheme.primaryTeal,
+            ),
+          ),
         ),
       ),
     );
@@ -92,6 +108,7 @@ class _AdoptionListScreenState extends State<AdoptionListScreen> {
   @override
   Widget build(BuildContext context) {
     final isEl = _isEl;
+    final currentUser = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -103,7 +120,7 @@ class _AdoptionListScreenState extends State<AdoptionListScreen> {
         child: const Icon(Icons.add),
       ),
       body: FutureBuilder<List<AdoptionPet>>(
-        future: _loadPets(),
+        future: _petsFuture,
         builder: (context, snap) {
           if (!snap.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -124,6 +141,7 @@ class _AdoptionListScreenState extends State<AdoptionListScreen> {
             itemCount: pets.length,
             itemBuilder: (context, i) {
               final pet = pets[i];
+              final isOwner = currentUser != null && currentUser.uid == pet.userId;
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 16),
@@ -170,28 +188,29 @@ class _AdoptionListScreenState extends State<AdoptionListScreen> {
                                       ),
                                     ),
                                   ),
-                                  PopupMenuButton<_AdoptionMenuAction>(
-                                    onSelected: (value) {
-                                      switch (value) {
-                                        case _AdoptionMenuAction.edit:
-                                          _editAdoption(pet);
-                                          break;
-                                        case _AdoptionMenuAction.delete:
-                                          _deleteAdoption(pet);
-                                          break;
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
-                                      PopupMenuItem(
-                                        value: _AdoptionMenuAction.edit,
-                                        child: Text(isEl ? 'Επεξεργασία' : 'Edit'),
-                                      ),
-                                      PopupMenuItem(
-                                        value: _AdoptionMenuAction.delete,
-                                        child: Text(isEl ? 'Διαγραφή' : 'Delete'),
-                                      ),
-                                    ],
-                                  ),
+                                  if (isOwner)
+                                    PopupMenuButton<_AdoptionMenuAction>(
+                                      onSelected: (value) {
+                                        switch (value) {
+                                          case _AdoptionMenuAction.edit:
+                                            _editAdoption(pet);
+                                            break;
+                                          case _AdoptionMenuAction.delete:
+                                            _deleteAdoption(pet);
+                                            break;
+                                        }
+                                      },
+                                      itemBuilder: (context) => [
+                                        PopupMenuItem(
+                                          value: _AdoptionMenuAction.edit,
+                                          child: Text(isEl ? 'Επεξεργασία' : 'Edit'),
+                                        ),
+                                        PopupMenuItem(
+                                          value: _AdoptionMenuAction.delete,
+                                          child: Text(isEl ? 'Διαγραφή' : 'Delete'),
+                                        ),
+                                      ],
+                                    ),
                                 ],
                               ),
                               if (pet.type.trim().isNotEmpty) ...[
