@@ -131,7 +131,7 @@ class _AdoptionListScreenState extends State<AdoptionListScreen> {
           if (pets.isEmpty) {
             return Center(
               child: Text(
-                isEl ? 'Δεν υπάρχουν αγγελίες υιοθεσίας ακόμα.' : 'No adoption listings yet.',
+                isEl ? 'Δεν υπάρχουν αγγελίες υιοθεσίας ακόμα' : 'No adoption listings yet',
               ),
             );
           }

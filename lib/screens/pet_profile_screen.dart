@@ -1596,7 +1596,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                   const SizedBox(height: 4),
                   Text(
                     isEl
-                        ? 'Δεν υπάρχουν καταχωρήσεις υγείας ακόμα. Πάτησε Add Health Event για να ξεκινήσεις.'
+                        ? 'Δεν υπάρχουν καταχωρήσεις υγείας ακόμα. Πάτησε «Προσθήκη» για να ξεκινήσεις.'
                         : 'No health records yet. Tap Add Health Event to get started.',
                     style: const TextStyle(
                       color: AppTheme.textSecondary,

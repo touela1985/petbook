@@ -19,6 +19,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _loading = false;
   bool _obscurePassword = true;
 
+  bool get _isEl => Localizations.localeOf(context).languageCode == 'el';
+
   @override
   void dispose() {
     _emailCtrl.dispose();
@@ -31,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordCtrl.text;
 
     if (email.isEmpty || password.isEmpty) {
-      _showError('Συμπλήρωσε email και κωδικό.');
+      _showError(_isEl ? 'Συμπλήρωσε email και κωδικό.' : 'Please enter your email and password.');
       return;
     }
 
@@ -61,6 +63,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final el = _isEl;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3F2F7),
       body: SafeArea(
@@ -81,9 +85,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'Σύνδεση',
-                  style: TextStyle(
+                Text(
+                  el ? 'Σύνδεση' : 'Sign in',
+                  style: const TextStyle(
                     fontSize: 16,
                     color: AppTheme.textSecondary,
                     fontWeight: FontWeight.w500,
@@ -103,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _passwordCtrl,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
-                    labelText: 'Κωδικός',
+                    labelText: el ? 'Κωδικός' : 'Password',
                     prefixIcon: const Icon(Icons.lock_outline_rounded),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -139,9 +143,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               strokeWidth: 2,
                             ),
                           )
-                        : const Text(
-                            'Σύνδεση',
-                            style: TextStyle(
+                        : Text(
+                            el ? 'Σύνδεση' : 'Sign in',
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
@@ -152,9 +156,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      'Δεν έχεις λογαριασμό; ',
-                      style: TextStyle(color: AppTheme.textSecondary),
+                    Text(
+                      el ? 'Δεν έχεις λογαριασμό; ' : "Don't have an account? ",
+                      style: const TextStyle(color: AppTheme.textSecondary),
                     ),
                     GestureDetector(
                       onTap: () {
@@ -165,9 +169,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         );
                       },
-                      child: const Text(
-                        'Εγγραφή',
-                        style: TextStyle(
+                      child: Text(
+                        el ? 'Εγγραφή' : 'Register',
+                        style: const TextStyle(
                           color: AppTheme.primaryTeal,
                           fontWeight: FontWeight.w700,
                         ),

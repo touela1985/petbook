@@ -468,7 +468,7 @@ Shared via Petbook
                       const SizedBox(width: 8),
                       Expanded(
                         child: _DetailsActionButton(
-                          label: isEl ? 'Κοινοπ.' : 'Share',
+                          label: isEl ? 'Κοινοποίηση' : 'Share',
                           icon: Icons.share_outlined,
                           onTap: _shareReport,
                           color: AppTheme.textSecondary,

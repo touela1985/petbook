@@ -151,10 +151,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
       context: context,
       builder: (_) {
         return AlertDialog(
-          title: Text(isEl ? 'Διαγραφή tip' : 'Delete tip'),
+          title: Text(isEl ? 'Διαγραφή συμβουλής' : 'Delete tip'),
           content: Text(
             isEl
-                ? 'Θέλεις σίγουρα να διαγράψεις αυτό το tip;'
+                ? 'Θέλεις σίγουρα να διαγράψεις αυτή τη συμβουλή;'
                 : 'Are you sure you want to delete this tip?',
           ),
           actions: [
@@ -297,7 +297,7 @@ class _CommunityTabs extends StatelessWidget {
         const SizedBox(width: 10),
         tab(
           index: 1,
-          label: 'Community Tips',
+          label: isEl ? 'Συμβουλές' : 'Community Tips',
         ),
       ],
     );
@@ -357,7 +357,7 @@ class _PlacesSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionHeader(
-          title: isEl ? 'Pet-Friendly Places' : 'Pet-Friendly Places',
+          title: isEl ? 'Φιλικά μέρη' : 'Pet-Friendly Places',
         ),
         const SizedBox(height: 14),
         Container(
@@ -507,7 +507,7 @@ class _TipsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader(title: 'Community Tips'),
+        SectionHeader(title: isEl ? 'Συμβουλές κοινότητας' : 'Community Tips'),
         const SizedBox(height: 14),
         Container(
           width: double.infinity,

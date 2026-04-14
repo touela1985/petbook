@@ -372,7 +372,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                   final days = reminderDay.difference(today).inDays;
 
-                  String title = isEl ? 'Reminder soon' : 'Reminder soon';
+                  String title = isEl ? 'Σύντομη υπενθύμιση' : 'Reminder soon';
                   String subtitle;
 
                   if (days <= 0) {
@@ -622,8 +622,8 @@ class _HomeLostAlertBar extends StatelessWidget {
         : (isEl ? 'Δεν υπάρχουν κοντινές ειδοποιήσεις' : 'No alerts nearby');
 
     final String subtitle = hasAlerts
-        ? (isEl ? 'Πάτησε για όλα τα reports' : 'Tap to view all reports')
-        : (isEl ? 'Πάτησε για να δεις reports' : 'Tap to explore reports');
+        ? (isEl ? 'Πάτησε για όλες τις δηλώσεις' : 'Tap to view all reports')
+        : (isEl ? 'Πάτησε για να δεις δηλώσεις' : 'Tap to explore reports');
 
     final IconData icon =
         hasAlerts ? Icons.warning_amber_rounded : Icons.check_circle_rounded;
@@ -847,7 +847,7 @@ class _HomeActiveLostBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = 'ACTIVE LOST ALERTS';
+    final title = isEl ? 'ΕΝΕΡΓΕΣ ΑΓΓΕΛΙΕΣ ΑΠΩΛΕΙΑΣ' : 'ACTIVE LOST ALERTS';
     final subtitle = isEl
         ? '$activeCount ζώα αγνοούνται κοντά σου'
         : '$activeCount pets currently missing near you';

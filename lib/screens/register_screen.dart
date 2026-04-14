@@ -20,6 +20,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
 
+  bool get _isEl => Localizations.localeOf(context).languageCode == 'el';
+
   @override
   void dispose() {
     _emailCtrl.dispose();
@@ -29,17 +31,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _register() async {
+    final el = _isEl;
     final email = _emailCtrl.text.trim();
     final password = _passwordCtrl.text;
     final confirm = _confirmCtrl.text;
 
     if (email.isEmpty || password.isEmpty || confirm.isEmpty) {
-      _showError('Συμπλήρωσε όλα τα πεδία.');
+      _showError(el ? 'Συμπλήρωσε όλα τα πεδία.' : 'Please fill in all fields.');
       return;
     }
 
     if (password != confirm) {
-      _showError('Οι κωδικοί δεν ταιριάζουν.');
+      _showError(el ? 'Οι κωδικοί δεν ταιριάζουν.' : 'Passwords do not match.');
       return;
     }
 
@@ -72,6 +75,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final el = _isEl;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3F2F7),
       appBar: AppBar(
@@ -92,9 +97,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 const Icon(Icons.pets, size: 56, color: AppTheme.primaryTeal),
                 const SizedBox(height: 10),
-                const Text(
-                  'Δημιουργία λογαριασμού',
-                  style: TextStyle(
+                Text(
+                  el ? 'Δημιουργία λογαριασμού' : 'Create account',
+                  style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     color: AppTheme.textPrimary,
@@ -114,7 +119,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   controller: _passwordCtrl,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
-                    labelText: 'Κωδικός',
+                    labelText: el ? 'Κωδικός' : 'Password',
                     prefixIcon: const Icon(Icons.lock_outline_rounded),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -132,7 +137,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   controller: _confirmCtrl,
                   obscureText: _obscureConfirm,
                   decoration: InputDecoration(
-                    labelText: 'Επιβεβαίωση κωδικού',
+                    labelText: el ? 'Επιβεβαίωση κωδικού' : 'Confirm password',
                     prefixIcon: const Icon(Icons.lock_outline_rounded),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -168,9 +173,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               strokeWidth: 2,
                             ),
                           )
-                        : const Text(
-                            'Εγγραφή',
-                            style: TextStyle(
+                        : Text(
+                            el ? 'Εγγραφή' : 'Register',
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
@@ -181,15 +186,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      'Έχεις ήδη λογαριασμό; ',
-                      style: TextStyle(color: AppTheme.textSecondary),
+                    Text(
+                      el ? 'Έχεις ήδη λογαριασμό; ' : 'Already have an account? ',
+                      style: const TextStyle(color: AppTheme.textSecondary),
                     ),
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
-                      child: const Text(
-                        'Σύνδεση',
-                        style: TextStyle(
+                      child: Text(
+                        el ? 'Σύνδεση' : 'Sign in',
+                        style: const TextStyle(
                           color: AppTheme.primaryTeal,
                           fontWeight: FontWeight.w700,
                         ),

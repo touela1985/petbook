@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../data/found_pet_report_repository.dart';
 import '../data/lost_pet_report_repository.dart';
 import '../data/pet_repository.dart';
 import '../services/notification_service.dart';
@@ -9,6 +10,7 @@ import '../theme/app_theme.dart';
 import 'community_screen.dart';
 import 'home_screen.dart';
 import 'lost_found_screen.dart';
+import 'found_pet_report_details_screen.dart';
 import 'lost_pet_report_details_screen.dart';
 import 'profile_screen.dart';
 import 'view_pets_screen.dart';
@@ -55,17 +57,28 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   Future<void> _handleNotificationTap(Map<String, String> data) async {
+    final type = data['type'];
     final reportId = data['reportId'];
     if (reportId == null || reportId.isEmpty) return;
 
-    final report = await LostPetReportRepository().getReportById(reportId);
-    if (report == null || !mounted) return;
-
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => LostPetReportDetailsScreen(report: report),
-      ),
-    );
+    if (type == 'new_found_message') {
+      final report = await FoundPetReportRepository().getReportById(reportId);
+      if (report == null || !mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => FoundPetReportDetailsScreen(report: report),
+        ),
+      );
+    } else {
+      // new_lost_report, new_lost_message
+      final report = await LostPetReportRepository().getReportById(reportId);
+      if (report == null || !mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => LostPetReportDetailsScreen(report: report),
+        ),
+      );
+    }
   }
 
   @override
@@ -118,7 +131,7 @@ class _MainNavigationState extends State<MainNavigation> {
           NavigationDestination(
             icon: const Icon(Icons.search_outlined),
             selectedIcon: const Icon(Icons.search_rounded),
-            label: isEl ? 'Απώλειες' : 'Lost',
+            label: isEl ? 'Αναζητήσεις' : 'Reports',
           ),
           NavigationDestination(
             icon: const Icon(Icons.person_outline_rounded),

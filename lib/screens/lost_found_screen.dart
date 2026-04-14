@@ -238,7 +238,7 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              isEl ? 'Δήλωση θέασης' : 'Report Sighting',
+                              isEl ? 'Αναφορά θέασης' : 'Report Sighting',
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w800,

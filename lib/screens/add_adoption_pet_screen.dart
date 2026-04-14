@@ -74,8 +74,8 @@ class _AddAdoptionPetScreenState extends State<AddAdoptionPetScreen> {
         SnackBar(
           content: Text(
             _isEl
-                ? 'Συμπλήρωσε τα υποχρεωτικά πεδία'
-                : 'Please fill required fields',
+                ? 'Συμπλήρωσε τα απαραίτητα πεδία'
+                : 'Please fill the required fields.',
           ),
         ),
       );

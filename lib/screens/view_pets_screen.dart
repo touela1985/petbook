@@ -18,6 +18,8 @@ class ViewPetsScreen extends StatefulWidget {
 class _ViewPetsScreenState extends State<ViewPetsScreen> {
   List<Pet> pets = [];
 
+  bool get _isEl => Localizations.localeOf(context).languageCode == 'el';
+
   @override
   void initState() {
     super.initState();
@@ -78,6 +80,7 @@ class _ViewPetsScreenState extends State<ViewPetsScreen> {
   }
 
   void _openMenu(Pet p) {
+    final el = _isEl;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -93,7 +96,7 @@ class _ViewPetsScreenState extends State<ViewPetsScreen> {
               children: [
                 ListTile(
                   leading: const Icon(Icons.edit_rounded),
-                  title: const Text('Edit'),
+                  title: Text(el ? 'Επεξεργασία' : 'Edit'),
                   onTap: () async {
                     Navigator.pop(context);
                     await _openEditPet(p);
@@ -101,7 +104,7 @@ class _ViewPetsScreenState extends State<ViewPetsScreen> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.delete_outline_rounded),
-                  title: const Text('Delete'),
+                  title: Text(el ? 'Διαγραφή' : 'Delete'),
                   onTap: () async {
                     Navigator.pop(context);
                     await _delete(p.id);
@@ -109,7 +112,7 @@ class _ViewPetsScreenState extends State<ViewPetsScreen> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.close_rounded),
-                  title: const Text('Cancel'),
+                  title: Text(el ? 'Άκυρο' : 'Cancel'),
                   onTap: () => Navigator.pop(context),
                 ),
               ],
@@ -215,6 +218,7 @@ class _ViewPetsScreenState extends State<ViewPetsScreen> {
   }
 
   Widget _emptyState() {
+    final el = _isEl;
     return Center(
       child: Container(
         padding: const EdgeInsets.all(24),
@@ -238,19 +242,21 @@ class _ViewPetsScreenState extends State<ViewPetsScreen> {
               color: Color(0xFF0F7C82),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'No pets yet',
-              style: TextStyle(
+            Text(
+              el ? 'Δεν υπάρχουν ζώα ακόμα' : 'No pets yet',
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: Color(0xFF1F2937),
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Add your first pet to start managing their profiles.',
+            Text(
+              el
+                  ? 'Πρόσθεσε το πρώτο σου κατοικίδιο για να διαχειριστείς το προφίλ του.'
+                  : 'Add your first pet to start managing their profiles.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
                 color: Colors.grey,
                 height: 1.4,
@@ -260,7 +266,7 @@ class _ViewPetsScreenState extends State<ViewPetsScreen> {
             ElevatedButton.icon(
               onPressed: _openAddPet,
               icon: const Icon(Icons.add),
-              label: const Text('Add your first pet'),
+              label: Text(el ? 'Πρόσθεσε το πρώτο σου ζώο' : 'Add your first pet'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0F7C82),
                 foregroundColor: Colors.white,
@@ -285,14 +291,14 @@ class _ViewPetsScreenState extends State<ViewPetsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9F9),
       appBar: AppBar(
-        title: const Text('My Pets'),
+        title: Text(_isEl ? 'Τα ζώα μου' : 'My Pets'),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openAddPet,
         backgroundColor: const Color(0xFF0F7C82),
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('Add Pet'),
+        label: Text(_isEl ? 'Προσθήκη' : 'Add Pet'),
       ),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),

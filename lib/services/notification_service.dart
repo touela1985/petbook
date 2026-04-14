@@ -189,7 +189,11 @@ class NotificationService {
     if (type == null || type.isEmpty || reportId == null || reportId.isEmpty) {
       return null;
     }
-    if (type != 'new_lost_report' && type != 'new_lost_message') return null;
+    if (type != 'new_lost_report' &&
+        type != 'new_lost_message' &&
+        type != 'new_found_message') {
+      return null;
+    }
     return {'type': type, 'reportId': reportId};
   }
 

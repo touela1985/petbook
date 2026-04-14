@@ -38,6 +38,63 @@ exports.onLostReportCreated = onDocumentCreated(
   }
 );
 
+// ─── Found Report message created → notify the receiver directly ─────────────
+
+exports.onFoundPetMessageCreated = onDocumentCreated(
+  'found_pet_messages/{messageId}',
+  async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+
+    const receiverUserId = data.receiverUserId;
+    const senderUserId   = data.senderUserId;
+
+    // Guard: no receiver → nothing to do
+    if (!receiverUserId) return;
+
+    // Guard: sender == receiver → skip self-message
+    if (senderUserId && senderUserId === receiverUserId) return;
+
+    // Look up the receiver's FCM token from users/{receiverUserId}
+    let fcmToken;
+    try {
+      const userDoc = await getFirestore()
+        .collection('users')
+        .doc(receiverUserId)
+        .get();
+
+      if (!userDoc.exists) return;
+      fcmToken = userDoc.data()?.fcmToken;
+    } catch (err) {
+      console.error('[petbook] User lookup failed:', err);
+      return;
+    }
+
+    // Guard: no token → cannot deliver
+    if (!fcmToken) return;
+
+    // Guard: no reportId → cannot deep-link
+    const reportId = data.reportId;
+    if (!reportId) return;
+
+    try {
+      await getMessaging().send({
+        notification: {
+          title: 'Νέο μήνυμα για ζώο που βρέθηκε',
+          body: 'Έχεις νέο μήνυμα σε αναφορά',
+        },
+        data: {
+          type: 'new_found_message',
+          reportId: reportId,
+        },
+        token: fcmToken,
+      });
+    } catch (err) {
+      console.error('[petbook] FCM found message notification error:', err);
+    }
+  }
+);
+
 // ─── Lost Report message created → notify the receiver directly ──────────────
 
 exports.onLostPetMessageCreated = onDocumentCreated(

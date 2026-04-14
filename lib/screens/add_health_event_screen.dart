@@ -258,7 +258,7 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
       case 'vaccine':
         final vaccineName = _nameController.text.trim();
         if (vaccineName.isEmpty) {
-          _showMessage(isEl ? 'Βάλε όνομα εμβολίου' : 'Please enter vaccine name');
+          _showMessage(isEl ? 'Συμπλήρωσε το όνομα εμβολίου' : 'Please enter vaccine name');
           return;
         }
         title = vaccineName;
@@ -271,15 +271,15 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
         final frequency = _tertiaryController.text.trim();
 
         if (medicationName.isEmpty) {
-          _showMessage(isEl ? 'Βάλε όνομα αγωγής' : 'Please enter medication name');
+          _showMessage(isEl ? 'Συμπλήρωσε το όνομα αγωγής' : 'Please enter medication name');
           return;
         }
         if (dosage.isEmpty) {
-          _showMessage(isEl ? 'Βάλε δοσολογία' : 'Please enter dosage');
+          _showMessage(isEl ? 'Συμπλήρωσε τη δοσολογία' : 'Please enter dosage');
           return;
         }
         if (frequency.isEmpty) {
-          _showMessage(isEl ? 'Βάλε συχνότητα' : 'Please enter frequency');
+          _showMessage(isEl ? 'Συμπλήρωσε τη συχνότητα' : 'Please enter frequency');
           return;
         }
 
@@ -293,7 +293,7 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
         final clinicName = _secondaryController.text.trim();
 
         if (visitReason.isEmpty) {
-          _showMessage(isEl ? 'Βάλε λόγο επίσκεψης' : 'Please enter visit reason');
+          _showMessage(isEl ? 'Συμπλήρωσε τον λόγο επίσκεψης' : 'Please enter visit reason');
           return;
         }
 
@@ -306,7 +306,7 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
       case 'weight':
         final parsedWeight = _parseWeight(_weightController.text);
         if (parsedWeight == null) {
-          _showMessage(isEl ? 'Βάλε βάρος' : 'Please enter a weight');
+          _showMessage(isEl ? 'Συμπλήρωσε το βάρος' : 'Please enter a weight');
           return;
         }
         if (parsedWeight <= 0) {
@@ -324,7 +324,7 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
       case 'reminder':
         final reminderTitle = _nameController.text.trim();
         if (reminderTitle.isEmpty) {
-          _showMessage(isEl ? 'Βάλε τίτλο υπενθύμισης' : 'Please enter reminder title');
+          _showMessage(isEl ? 'Συμπλήρωσε τον τίτλο υπενθύμισης' : 'Please enter reminder title');
           return;
         }
         title = reminderTitle;
@@ -336,7 +336,7 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
         final reaction = _secondaryController.text.trim();
 
         if (allergyName.isEmpty) {
-          _showMessage(isEl ? 'Βάλε όνομα αλλεργίας' : 'Please enter allergy name');
+          _showMessage(isEl ? 'Συμπλήρωσε το όνομα αλλεργίας' : 'Please enter allergy name');
           return;
         }
 
@@ -351,7 +351,7 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
         final clinicVet = _secondaryController.text.trim();
 
         if (surgeryTitle.isEmpty) {
-          _showMessage(isEl ? 'Βάλε τίτλο χειρουργείου' : 'Please enter surgery title');
+          _showMessage(isEl ? 'Συμπλήρωσε τον τίτλο χειρουργείου' : 'Please enter surgery title');
           return;
         }
 
@@ -366,7 +366,7 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
         final instructions = _secondaryController.text.trim();
 
         if (treatmentName.isEmpty) {
-          _showMessage(isEl ? 'Βάλε όνομα θεραπείας' : 'Please enter treatment name');
+          _showMessage(isEl ? 'Συμπλήρωσε το όνομα θεραπείας' : 'Please enter treatment name');
           return;
         }
 
@@ -379,7 +379,7 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
       case 'note':
         final noteTitle = _nameController.text.trim();
         if (noteTitle.isEmpty) {
-          _showMessage(isEl ? 'Βάλε τίτλο σημείωσης' : 'Please enter note title');
+          _showMessage(isEl ? 'Συμπλήρωσε τον τίτλο σημείωσης' : 'Please enter note title');
           return;
         }
         title = noteTitle;
@@ -389,7 +389,7 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
       default:
         final genericTitle = _nameController.text.trim();
         if (genericTitle.isEmpty) {
-          _showMessage(isEl ? 'Βάλε τίτλο' : 'Please enter a title');
+          _showMessage(isEl ? 'Συμπλήρωσε έναν τίτλο' : 'Please enter a title');
           return;
         }
         title = genericTitle;
@@ -401,7 +401,7 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
 
     if (_supportsReminder && _hasReminder && reminderDate == null) {
       _showMessage(
-        isEl ? 'Διάλεξε ημερομηνία υπενθύμισης' : 'Please choose a reminder date',
+        isEl ? 'Επίλεξε ημερομηνία υπενθύμισης' : 'Please choose a reminder date',
       );
       return;
     }

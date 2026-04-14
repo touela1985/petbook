@@ -17,6 +17,8 @@ class _RemindersScreenState extends State<RemindersScreen> {
   final PetHealthRepository _healthRepo = PetHealthRepository();
   final PetRepository _petRepo = PetRepository();
 
+  bool get _isEl => Localizations.localeOf(context).languageCode == 'el';
+
   List<PetHealthEvent> _reminders = [];
   Map<String, Pet> _petsById = {};
   bool _loading = true;
@@ -71,27 +73,28 @@ class _RemindersScreenState extends State<RemindersScreen> {
   }
 
   String _eventTypeLabel(String type) {
+    final el = _isEl;
     switch (type) {
       case 'vaccine':
-        return 'Vaccine';
+        return el ? 'Εμβόλιο' : 'Vaccine';
       case 'medication':
-        return 'Medication';
+        return el ? 'Αγωγή' : 'Medication';
       case 'vet_visit':
-        return 'Vet Visit';
+        return el ? 'Κτηνίατρος' : 'Vet Visit';
       case 'weight':
-        return 'Weight';
+        return el ? 'Βάρος' : 'Weight';
       case 'reminder':
-        return 'Reminder';
+        return el ? 'Υπενθύμιση' : 'Reminder';
       case 'allergy':
-        return 'Allergy';
+        return el ? 'Αλλεργία' : 'Allergy';
       case 'surgery':
-        return 'Surgery';
+        return el ? 'Χειρουργείο' : 'Surgery';
       case 'treatment':
-        return 'Treatment';
+        return el ? 'Θεραπεία' : 'Treatment';
       case 'note':
-        return 'Note';
+        return el ? 'Σημείωση' : 'Note';
       default:
-        return 'Health Event';
+        return el ? 'Καταχώρηση υγείας' : 'Health Event';
     }
   }
 
@@ -102,26 +105,29 @@ class _RemindersScreenState extends State<RemindersScreen> {
   }
 
   String _statusText(int days) {
-    if (days < 0) return 'Late';
-    if (days == 0) return 'Today';
-    if (days == 1) return 'Tomorrow';
-    return '$days d';
+    final el = _isEl;
+    if (days < 0) return el ? 'Εκπρόθεσμο' : 'Late';
+    if (days == 0) return el ? 'Σήμερα' : 'Today';
+    if (days == 1) return el ? 'Αύριο' : 'Tomorrow';
+    return el ? 'σε $days μ.' : 'in $days d';
   }
 
   @override
   Widget build(BuildContext context) {
+    final el = _isEl;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Reminders'),
+        title: Text(el ? 'Υπενθυμίσεις' : 'Reminders'),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _reminders.isEmpty
-              ? const Center(
+              ? Center(
                   child: Text(
-                    'No reminders yet',
-                    style: TextStyle(fontSize: 16),
+                    el ? 'Δεν υπάρχουν υπενθυμίσεις' : 'No reminders yet',
+                    style: const TextStyle(fontSize: 16),
                   ),
                 )
               : RefreshIndicator(
@@ -137,11 +143,11 @@ class _RemindersScreenState extends State<RemindersScreen> {
 
                       final petName = pet != null && pet.name.trim().isNotEmpty
                           ? pet.name.trim()
-                          : 'Unknown pet';
+                          : (el ? 'Άγνωστο ζώο' : 'Unknown pet');
 
                       final petType = pet != null && pet.type.trim().isNotEmpty
                           ? pet.type.trim()
-                          : 'Pet';
+                          : (el ? 'Ζώο' : 'Pet');
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
@@ -163,14 +169,14 @@ class _RemindersScreenState extends State<RemindersScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 4),
-                              Text('Pet: $petName'),
+                              Text('${el ? 'Ζώο' : 'Pet'}: $petName'),
                               const SizedBox(height: 2),
-                              Text('Type: $petType'),
+                              Text('${el ? 'Τύπος' : 'Type'}: $petType'),
                               const SizedBox(height: 2),
-                              Text('Event: ${_eventTypeLabel(reminder.type)}'),
+                              Text('${el ? 'Συμβάν' : 'Event'}: ${_eventTypeLabel(reminder.type)}'),
                               const SizedBox(height: 2),
                               Text(
-                                'Reminder: ${_formatDate(reminder.reminderDate!)}',
+                                '${el ? 'Ημερομηνία' : 'Reminder'}: ${_formatDate(reminder.reminderDate!)}',
                               ),
                             ],
                           ),

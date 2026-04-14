@@ -270,7 +270,7 @@ class _AddLostPetReportScreenState
             const SizedBox(width: 10),
             ElevatedButton(
               onPressed: _pickImage,
-              child: Text(_isEl ? 'Προσθήκη' : 'Add'),
+              child: Text(_isEl ? 'Προσθήκη φωτογραφίας' : 'Add Photo'),
             ),
           ],
         ),
