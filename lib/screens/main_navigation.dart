@@ -70,7 +70,7 @@ class _MainNavigationState extends State<MainNavigation> {
         ),
       );
     } else {
-      // new_lost_report, new_lost_message
+      // new_lost_report, new_lost_message, new_lost_sighting
       final report = await LostPetReportRepository().getReportById(reportId);
       if (report == null || !mounted) return;
       await Navigator.of(context).push(

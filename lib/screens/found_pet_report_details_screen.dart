@@ -457,15 +457,16 @@ Shared via Petbook
                           ),
                         ),
                       if (_hasPhone) const SizedBox(width: 8),
-                      Expanded(
-                        child: _DetailsActionButton(
-                          label: isEl ? 'Μήνυμα' : 'Message',
-                          icon: Icons.chat_bubble_outline_rounded,
-                          onTap: () => _sendMessage(context),
-                          color: AppTheme.primaryTeal,
+                      if (!isOwner)
+                        Expanded(
+                          child: _DetailsActionButton(
+                            label: isEl ? 'Μήνυμα' : 'Message',
+                            icon: Icons.chat_bubble_outline_rounded,
+                            onTap: () => _sendMessage(context),
+                            color: AppTheme.primaryTeal,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
+                      if (!isOwner) const SizedBox(width: 8),
                       Expanded(
                         child: _DetailsActionButton(
                           label: isEl ? 'Κοινοποίηση' : 'Share',

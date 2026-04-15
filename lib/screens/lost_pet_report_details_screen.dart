@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../data/lost_pet_message_repository.dart';
 import '../data/lost_pet_report_repository.dart';
+import '../data/lost_sighting_repository.dart';
 import '../models/lost_pet_report.dart';
 import '../theme/app_theme.dart';
 import '../widgets/pet_image_widget.dart';
@@ -30,21 +31,51 @@ class _LostPetReportDetailsScreenState
   final LostPetMessageRepository _messageRepository =
       LostPetMessageRepository();
   final LostPetReportRepository _reportRepository = LostPetReportRepository();
+  final LostSightingRepository _sightingRepository = LostSightingRepository();
 
   late LostPetReport _report;
 
   int _messageCount = 0;
   bool _isMarkingResolved = false;
+  List<LostPetSighting> _sightings = [];
 
   @override
   void initState() {
     super.initState();
     _report = widget.report;
     _loadMessageStats();
+    _loadSightings();
+  }
+
+  Future<void> _loadSightings() async {
+    try {
+      final remote =
+          await _sightingRepository.getSightingsForReport(_report.id);
+      // Συγχώνευση με embedded sightings (παλιά δεδομένα) — dedup by id.
+      final Map<String, LostPetSighting> seen = {
+        for (final s in _report.sightings) s.id: s,
+        for (final s in remote) s.id: s,
+      };
+      final merged = seen.values.toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      if (!mounted) return;
+      setState(() {
+        _sightings = merged;
+      });
+    } catch (_) {
+      // Fallback: χρήση embedded sightings αν το Firestore αποτύχει.
+      if (!mounted) return;
+      setState(() {
+        _sightings = [..._report.sightings]
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      });
+    }
   }
 
   Future<void> _loadMessageStats() async {
-    final messages = await _messageRepository.getMessagesForReport(_report.id);
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final messages =
+        await _messageRepository.getMessagesForReport(_report.id, uid);
     if (!mounted) return;
     setState(() {
       _messageCount = messages.length;
@@ -90,11 +121,7 @@ class _LostPetReportDetailsScreenState
     return _isEl ? 'Αναφορά απώλειας' : 'Lost pet alert';
   }
 
-  List<LostPetSighting> get _sortedSightings {
-    final sightings = [..._report.sightings];
-    sightings.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return sightings;
-  }
+  List<LostPetSighting> get _sortedSightings => _sightings;
 
   String get _messageSubtitle {
     if (_messageCount == 0) {
@@ -337,32 +364,40 @@ Shared via Petbook
 
     if (confirm != true) return;
 
-    final updatedSightings =
-        _report.sightings.where((item) => item.id != sighting.id).toList();
+    // Διαγραφή από το νέο collection.
+    try {
+      await _sightingRepository.deleteSighting(sighting.id);
+    } catch (_) {}
 
-    final updatedReport = LostPetReport(
-      id: _report.id,
-      petName: _report.petName,
-      type: _report.type,
-      lastSeenLocation: _report.lastSeenLocation,
-      lastSeenDate: _report.lastSeenDate,
-      notes: _report.notes,
-      contactPhone: _report.contactPhone,
-      isResolved: _report.isResolved,
-      photoPath: _report.photoPath,
-      photoUrl: _report.photoUrl,
-      latitude: _report.latitude,
-      longitude: _report.longitude,
-      createdAt: _report.createdAt,
-      sightings: updatedSightings,
-    );
-
-    await _reportRepository.updateReport(updatedReport);
+    // Διαγραφή και από embedded (για backward compat με παλιά δεδομένα).
+    final updatedEmbedded =
+        _report.sightings.where((s) => s.id != sighting.id).toList();
+    if (updatedEmbedded.length != _report.sightings.length) {
+      final updatedReport = LostPetReport(
+        id: _report.id,
+        petName: _report.petName,
+        type: _report.type,
+        lastSeenLocation: _report.lastSeenLocation,
+        lastSeenDate: _report.lastSeenDate,
+        notes: _report.notes,
+        contactPhone: _report.contactPhone,
+        isResolved: _report.isResolved,
+        photoPath: _report.photoPath,
+        photoUrl: _report.photoUrl,
+        latitude: _report.latitude,
+        longitude: _report.longitude,
+        createdAt: _report.createdAt,
+        sightings: updatedEmbedded,
+      );
+      await _reportRepository.updateReport(updatedReport);
+      if (!mounted) return;
+      _report = updatedReport;
+    }
 
     if (!mounted) return;
 
     setState(() {
-      _report = updatedReport;
+      _sightings = _sightings.where((s) => s.id != sighting.id).toList();
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -769,15 +804,16 @@ Shared via Petbook
                           ),
                         ),
                       if (_hasPhone) const SizedBox(width: 10),
-                      Expanded(
-                        child: _DetailsActionButton(
-                          label: isEl ? 'Μήνυμα' : 'Message',
-                          icon: Icons.chat_bubble_outline_rounded,
-                          onTap: () => _sendMessage(context),
-                          color: AppTheme.primaryTeal,
+                      if (!isOwner)
+                        Expanded(
+                          child: _DetailsActionButton(
+                            label: isEl ? 'Μήνυμα' : 'Message',
+                            icon: Icons.chat_bubble_outline_rounded,
+                            onTap: () => _sendMessage(context),
+                            color: AppTheme.primaryTeal,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
+                      if (!isOwner) const SizedBox(width: 10),
                       Expanded(
                         child: _DetailsActionButton(
                           label: isEl ? 'Κοινοπ.' : 'Share',

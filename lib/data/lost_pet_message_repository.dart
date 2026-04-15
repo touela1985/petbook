@@ -39,15 +39,30 @@ class LostPetMessageRepository {
   }
 
   Future<List<LostPetMessage>> _loadFirestoreForReport(
-      String reportId) async {
-    final snapshot = await _firestore
+      String reportId, String uid) async {
+    // Two separate single-field queries to satisfy Firestore security rules.
+    // Rules allow read only when senderUserId==uid OR receiverUserId==uid.
+    final q1 = await _firestore
         .collection(_collection)
-        .where('reportId', isEqualTo: reportId)
-        .orderBy('createdAt', descending: true)
+        .where('senderUserId', isEqualTo: uid)
         .get();
-    return snapshot.docs
-        .map((doc) => LostPetMessage.fromJson(doc.data()))
-        .toList();
+
+    final q2 = await _firestore
+        .collection(_collection)
+        .where('receiverUserId', isEqualTo: uid)
+        .get();
+
+    // Merge, filter by reportId in Dart, deduplicate by id.
+    final Map<String, LostPetMessage> seen = {};
+    for (final doc in [...q1.docs, ...q2.docs]) {
+      final msg = LostPetMessage.fromJson(doc.data());
+      if (msg.reportId != reportId) continue;
+      seen[msg.id] = msg;
+    }
+
+    final messages = seen.values.toList();
+    messages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return messages;
   }
 
   // ─── Public API ───────────────────────────────────────────────────────────
@@ -57,10 +72,12 @@ class LostPetMessageRepository {
     return local;
   }
 
-  Future<List<LostPetMessage>> getMessagesForReport(String reportId) async {
+  Future<List<LostPetMessage>> getMessagesForReport(
+      String reportId, String uid) async {
     // Try Firestore first; fall back to local on error.
     try {
-      final firestoreMessages = await _loadFirestoreForReport(reportId);
+      final firestoreMessages =
+          await _loadFirestoreForReport(reportId, uid);
       if (firestoreMessages.isNotEmpty) return firestoreMessages;
     } catch (_) {}
 

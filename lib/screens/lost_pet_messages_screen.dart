@@ -48,7 +48,8 @@ class _LostPetMessagesScreenState extends State<LostPetMessagesScreen> {
   }
 
   Future<void> _loadMessages() async {
-    final messages = await _repo.getMessagesForReport(widget.report.id);
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final messages = await _repo.getMessagesForReport(widget.report.id, uid);
 
     if (!mounted) return;
 
@@ -165,18 +166,10 @@ class _LostPetMessagesScreenState extends State<LostPetMessagesScreen> {
               ),
             ),
             if (_canDelete(message))
-              PopupMenuButton<String>(
-                onSelected: (value) async {
-                  if (value == 'delete') {
-                    await _deleteMessage(message);
-                  }
-                },
-                itemBuilder: (_) => [
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Text(_isEl ? 'Διαγραφή' : 'Delete'),
-                  ),
-                ],
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded),
+                color: AppTheme.textSecondary,
+                onPressed: () => _deleteMessage(message),
               ),
           ],
         ),

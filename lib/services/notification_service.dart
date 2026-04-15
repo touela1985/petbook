@@ -191,7 +191,8 @@ class NotificationService {
     }
     if (type != 'new_lost_report' &&
         type != 'new_lost_message' &&
-        type != 'new_found_message') {
+        type != 'new_found_message' &&
+        type != 'new_lost_sighting') {
       return null;
     }
     return {'type': type, 'reportId': reportId};

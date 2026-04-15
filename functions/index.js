@@ -95,6 +95,95 @@ exports.onFoundPetMessageCreated = onDocumentCreated(
   }
 );
 
+// ─── Lost Sighting created → notify the report owner directly ────────────────
+
+exports.onLostSightingCreated = onDocumentCreated(
+  'lost_sightings/{sightingId}',
+  async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+
+    const reportId        = data.reportId;
+    const submittedByUserId = data.submittedByUserId;
+
+    // Guard: no reportId → cannot look up owner or deep-link
+    if (!reportId) return;
+
+    // Fetch the lost report to find the owner's userId
+    let reportData;
+    try {
+      const reportDoc = await getFirestore()
+        .collection('lost_reports')
+        .doc(reportId)
+        .get();
+      if (!reportDoc.exists) return;
+      reportData = reportDoc.data();
+    } catch (err) {
+      console.error('[petbook] Lost report lookup failed:', err);
+      return;
+    }
+
+    const ownerUserId = reportData?.userId;
+
+    // Guard: no owner → cannot notify
+    if (!ownerUserId) return;
+
+    // Guard: submitter is the owner → skip self-notification
+    if (submittedByUserId && submittedByUserId === ownerUserId) return;
+
+    // Look up the owner's FCM token
+    let fcmToken;
+    try {
+      const userDoc = await getFirestore()
+        .collection('users')
+        .doc(ownerUserId)
+        .get();
+      if (!userDoc.exists) return;
+      fcmToken = userDoc.data()?.fcmToken;
+    } catch (err) {
+      console.error('[petbook] User lookup failed:', err);
+      return;
+    }
+
+    // Guard: no token → cannot deliver
+    if (!fcmToken) return;
+
+    // Build a human-friendly body from the sighting location + pet name
+    const petName = (reportData.petName && reportData.petName.trim())
+      ? reportData.petName.trim()
+      : null;
+
+    const location = (data.location && data.location.trim())
+      ? data.location.trim()
+      : null;
+
+    let body = 'Κάποιος είδε το ζωάκι σου!';
+    if (petName && location) {
+      body = `Κάποιος είδε τον/την ${petName} κοντά στο ${location}`;
+    } else if (petName) {
+      body = `Κάποιος είδε τον/την ${petName}!`;
+    } else if (location) {
+      body = `Θέαση κοντά στο ${location}`;
+    }
+
+    try {
+      await getMessaging().send({
+        notification: {
+          title: 'Νέα θέαση για χαμένο ζωάκι',
+          body,
+        },
+        data: {
+          type: 'new_lost_sighting',
+          reportId: reportId,
+        },
+        token: fcmToken,
+      });
+    } catch (err) {
+      console.error('[petbook] FCM sighting notification error:', err);
+    }
+  }
+);
+
 // ─── Lost Report message created → notify the receiver directly ──────────────
 
 exports.onLostPetMessageCreated = onDocumentCreated(

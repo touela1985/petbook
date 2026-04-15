@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import '../data/found_pet_report_repository.dart';
 import '../data/lost_pet_report_repository.dart';
+import '../data/lost_sighting_repository.dart';
 import '../models/found_pet_report.dart';
 import '../models/lost_pet_report.dart';
 import '../theme/app_theme.dart';
@@ -32,6 +33,7 @@ class LostFoundScreen extends StatefulWidget {
 class _LostFoundScreenState extends State<LostFoundScreen> {
   final LostPetReportRepository _lostRepo = LostPetReportRepository();
   final FoundPetReportRepository _foundRepo = FoundPetReportRepository();
+  final LostSightingRepository _sightingRepo = LostSightingRepository();
   final Uuid _uuid = const Uuid();
 
   Position? _userPosition;
@@ -409,33 +411,16 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
       longitude: longitude,
     );
 
-    final updatedReport = LostPetReport(
-      id: report.id,
-      petName: report.petName,
-      type: report.type,
-      lastSeenLocation: report.lastSeenLocation,
-      lastSeenDate: report.lastSeenDate,
-      notes: report.notes,
-      contactPhone: report.contactPhone,
-      isResolved: report.isResolved,
-      photoPath: report.photoPath,
-      photoUrl: report.photoUrl,
-      latitude: report.latitude,
-      longitude: report.longitude,
-      createdAt: report.createdAt,
-      sightings: [
-        ...report.sightings,
-        newSighting,
-      ],
+    final submittedByUserId =
+        FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    await _sightingRepo.addSighting(
+      reportId: report.id,
+      sighting: newSighting,
+      submittedByUserId: submittedByUserId,
     );
 
-    await _lostRepo.updateReport(updatedReport);
-
     if (!mounted) return;
-
-    setState(() {
-      _lostReportsFuture = _loadLostReports();
-    });
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -1458,13 +1443,14 @@ Shared via Petbook
                         color: Colors.green,
                       ),
                     if (hasPhone) const SizedBox(width: 8),
-                    _ActionPillButton(
-                      label: 'Msg',
-                      icon: Icons.chat_bubble_outline_rounded,
-                      onTap: onMessageTap,
-                      color: AppTheme.primaryTeal,
-                    ),
-                    const SizedBox(width: 8),
+                    if (!isOwner)
+                      _ActionPillButton(
+                        label: 'Msg',
+                        icon: Icons.chat_bubble_outline_rounded,
+                        onTap: onMessageTap,
+                        color: AppTheme.primaryTeal,
+                      ),
+                    if (!isOwner) const SizedBox(width: 8),
                     _ActionPillButton(
                       label: isEl ? 'Κοινοπ.' : 'Share',
                       icon: Icons.share_outlined,
@@ -1473,33 +1459,35 @@ Shared via Petbook
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: OutlinedButton.icon(
-                    onPressed: onSightingTap,
-                    icon: const Icon(Icons.remove_red_eye_outlined),
-                    label: Text(isEl ? 'Το είδα' : 'I Saw It'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.primaryTeal,
-                      side: BorderSide(
-                        color: AppTheme.primaryTeal.withOpacity(0.28),
-                      ),
-                      backgroundColor: const Color(0xFFEAF7F5),
-                      elevation: 1,
-                      shadowColor: Colors.black.withOpacity(0.05),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      textStyle: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
+                if (!isOwner) ...[
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: OutlinedButton.icon(
+                      onPressed: onSightingTap,
+                      icon: const Icon(Icons.remove_red_eye_outlined),
+                      label: Text(isEl ? 'Το είδα' : 'I Saw It'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.primaryTeal,
+                        side: BorderSide(
+                          color: AppTheme.primaryTeal.withOpacity(0.28),
+                        ),
+                        backgroundColor: const Color(0xFFEAF7F5),
+                        elevation: 1,
+                        shadowColor: Colors.black.withOpacity(0.05),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        textStyle: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -1721,13 +1709,14 @@ Shared via Petbook
                         color: Colors.green,
                       ),
                     if (hasPhone) const SizedBox(width: 8),
-                    _ActionPillButton(
-                      label: 'Msg',
-                      icon: Icons.chat_bubble_outline_rounded,
-                      onTap: () => _messageFinder(context),
-                      color: AppTheme.primaryTeal,
-                    ),
-                    const SizedBox(width: 8),
+                    if (!isOwner)
+                      _ActionPillButton(
+                        label: 'Msg',
+                        icon: Icons.chat_bubble_outline_rounded,
+                        onTap: () => _messageFinder(context),
+                        color: AppTheme.primaryTeal,
+                      ),
+                    if (!isOwner) const SizedBox(width: 8),
                     _ActionPillButton(
                       label: isEl ? 'Κοινοπ.' : 'Share',
                       icon: Icons.share_outlined,
