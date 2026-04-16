@@ -543,42 +543,15 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
             final activeLostReports =
                 lostReports.where((report) => !report.isResolved).toList();
 
-            final nearbyNewLostReports = _newNearbyLostReports(lostReports);
-            final hasNewNearbyAlert = nearbyNewLostReports.isNotEmpty;
-            final newestNearbyReport =
-                hasNewNearbyAlert ? nearbyNewLostReports.first : null;
-            final nearestNearbyReport =
-                _nearestLostReport(nearbyNewLostReports);
-
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                if (hasNewNearbyAlert && newestNearbyReport != null) ...[
-                  _NewLostAlertBanner(
-                    isEl: isEl,
-                    report: newestNearbyReport,
-                    nearestReport: nearestNearbyReport ?? newestNearbyReport,
-                    nearbyCount: nearbyNewLostReports.length,
-                    userPosition: _userPosition,
-                    onTap: () =>
-                        _openNearbyLostPetsScreen(nearbyNewLostReports),
-                  ),
-                  const SizedBox(height: 12),
-                ],
+                // Nearby banner removed — nearby is a Home-level discovery signal.
+                // Inside the Lost & Found flow only the active alert context is shown.
                 _ActiveLostAlertsBanner(
                   isEl: isEl,
                   activeCount: activeLostReports.length,
                   onTap: () => _openMapPreviewScreen(activeLostReports),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  isEl
-                      ? 'Πάτησε ανανέωση για κοντινές ειδοποιήσεις'
-                      : 'Tap refresh to update nearby alerts',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
-                  ),
                 ),
                 const SizedBox(height: 22),
                 Text(

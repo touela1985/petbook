@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../data/lost_pet_report_repository.dart';
 import '../data/pet_repository.dart';
+import '../models/lost_pet_report.dart';
 import '../widgets/pet_image_widget.dart';
 import '../l10n/app_localizations.dart';
 import '../models/pet.dart';
@@ -11,6 +13,7 @@ import 'add_lost_pet_report_screen.dart';
 import 'add_pet_screen.dart';
 import 'adoption_list_screen.dart';
 import 'lost_found_screen.dart';
+import 'lost_pet_report_details_screen.dart';
 import 'pet_profile_screen.dart';
 import 'reminders_screen.dart';
 import 'lost_reports_map_screen.dart';
@@ -39,25 +42,68 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<List<Pet>> _loadPets() async => widget.repo.getAll();
 
-  Future<int> _loadLostAlertCount() async {
-    final reports = await _lostRepo.getReports();
-    final now = DateTime.now();
-    final last24Hours = now.subtract(const Duration(hours: 24));
+  // ── Banner counts: distance-based nearby (<=3000m) + active-outside-nearby ──
+  static const double _nearbyThresholdMeters = 3000.0;
 
-    int count = 0;
-    for (final report in reports) {
-      try {
-        if (report.lastSeenDate.isAfter(last24Hours)) {
-          count++;
+  Future<List<int>> _loadBannerCounts() async {
+    final reports = await _lostRepo.getReports();
+    final activeReports = reports.where((r) => !r.isResolved).toList();
+
+    debugPrint('[Banner] Total active lost reports: ${activeReports.length}');
+
+    // Get user position — same pattern as lost_found_screen.dart
+    Position? userPosition;
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (serviceEnabled) {
+        var permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
         }
-      } catch (_) {}
+        if (permission == LocationPermission.whileInUse ||
+            permission == LocationPermission.always) {
+          userPosition = await Geolocator.getCurrentPosition();
+        }
+      }
+    } catch (e) {
+      debugPrint('[Banner] Location unavailable: $e');
     }
-    return count;
-  }
 
-  Future<int> _loadActiveLostCount() async {
-    final reports = await _lostRepo.getReports();
-    return reports.where((report) => !report.isResolved).length;
+    if (userPosition == null) {
+      // No location → no nearby banner, show all active as active-only
+      debugPrint(
+          '[Banner] No location — nearbyCount=0, activeLostCount=${activeReports.length}');
+      return [0, activeReports.length];
+    }
+
+    // Split: nearby (distanceMeters <= 3000) vs far
+    final nearbyIds = <String>{};
+    for (final report in activeReports) {
+      if (report.latitude == null || report.longitude == null) {
+        debugPrint(
+            '[Banner] "${report.petName}" — no coordinates, skipped from nearby');
+        continue;
+      }
+      final distMeters = Geolocator.distanceBetween(
+        userPosition.latitude,
+        userPosition.longitude,
+        report.latitude!,
+        report.longitude!,
+      );
+      debugPrint(
+          '[Banner] "${report.petName}" — distanceMeters=${distMeters.toStringAsFixed(0)}');
+      if (distMeters <= _nearbyThresholdMeters) {
+        nearbyIds.add(report.id);
+      }
+    }
+
+    final nearbyCount = nearbyIds.length;
+    final activeLostCount =
+        activeReports.where((r) => !nearbyIds.contains(r.id)).length;
+
+    debugPrint(
+        '[Banner] nearbyCount=$nearbyCount, activeLostCount=$activeLostCount');
+    return [nearbyCount, activeLostCount];
   }
 
   Future<void> _setLanguage(Locale? locale) async {
@@ -119,6 +165,71 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => const LostFoundScreen(),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  /// Nearby banner primary CTA → opens the NEAREST nearby report directly.
+  /// Falls back to the generic list only if location is unavailable or
+  /// no reports are found within threshold.
+  void _openNearestNearbyReport() async {
+    final reports = await _lostRepo.getReports();
+    final activeReports = reports.where((r) => !r.isResolved).toList();
+
+    Position? userPosition;
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (serviceEnabled) {
+        var permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+        if (permission == LocationPermission.whileInUse ||
+            permission == LocationPermission.always) {
+          userPosition = await Geolocator.getCurrentPosition();
+        }
+      }
+    } catch (_) {}
+
+    // No location → fall back to generic list
+    if (userPosition == null) {
+      _openLostFound();
+      return;
+    }
+
+    // Build nearby list with distances
+    final nearby = <LostPetReport>[];
+    final distances = <String, double>{};
+    for (final report in activeReports) {
+      if (report.latitude == null || report.longitude == null) continue;
+      final dist = Geolocator.distanceBetween(
+        userPosition.latitude,
+        userPosition.longitude,
+        report.latitude!,
+        report.longitude!,
+      );
+      if (dist <= _nearbyThresholdMeters) {
+        nearby.add(report);
+        distances[report.id] = dist;
+      }
+    }
+
+    // No nearby reports found → fall back to generic list
+    if (nearby.isEmpty) {
+      _openLostFound();
+      return;
+    }
+
+    // Sort ascending by distance — nearest first
+    nearby.sort((a, b) => distances[a.id]!.compareTo(distances[b.id]!));
+    final nearest = nearby.first;
+
+    if (!mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LostPetReportDetailsScreen(report: nearest),
       ),
     );
     if (mounted) setState(() {});
@@ -291,8 +402,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: FutureBuilder<List<dynamic>>(
         future: Future.wait<dynamic>([
           _loadPets(),
-          _loadLostAlertCount(),
-          _loadActiveLostCount(),
+          _loadBannerCounts(), // [nearbyCount, activeLostOutsideNearby]
         ]),
         builder: (context, snap) {
           if (!snap.hasData) {
@@ -300,24 +410,44 @@ class _HomeScreenState extends State<HomeScreen> {
           }
 
           final pets = snap.data![0] as List<Pet>;
-          final alertCount = snap.data![1] as int;
-          final activeLostCount = snap.data![2] as int;
+          final bannerCounts = snap.data![1] as List<int>;
+          // alertCount  = reports within 3000m of user
+          // activeLostCount = active reports outside the 3000m radius
+          final alertCount = bannerCounts[0];
+          final activeLostCount = bannerCounts[1];
+
+          // Explicit banner conditions — never show both at the same time
+          final hasNearbyBanner = alertCount > 0;
+          final hasActiveBanner = !hasNearbyBanner && activeLostCount > 0;
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             children: [
-              _HomeLostAlertBar(
-                isEl: isEl,
-                alertCount: alertCount,
-                onTap: _openLostFound,
-              ),
-              const SizedBox(height: 10),
-              _HomeActiveLostBanner(
-                isEl: isEl,
-                activeCount: activeLostCount,
-                onTap: _openActiveLostMap,
-              ),
-              const SizedBox(height: 24),
+              // ── TOP ALERT BANNER — one state shown at a time ──────────────
+              if (hasNearbyBanner) ...[
+                _HomeAlertBanner(
+                  isEl: isEl,
+                  alertCount: alertCount,
+                  activeCount: activeLostCount,
+                  showNearby: true,
+                  // Opens the NEAREST nearby report directly — NOT the generic list
+                  onOpenReports: _openNearestNearbyReport,
+                  onOpenMap: _openActiveLostMap,
+                ),
+                const SizedBox(height: 20),
+              ] else if (hasActiveBanner) ...[
+                _HomeAlertBanner(
+                  isEl: isEl,
+                  alertCount: alertCount,
+                  activeCount: activeLostCount,
+                  showNearby: false,
+                  onOpenReports: _openLostFound,
+                  onOpenMap: _openActiveLostMap,
+                ),
+                const SizedBox(height: 20),
+              ],
+              // (if !hasAnyBanner → no banner, no spacing)
+              // ── REPORT LOST / REPORT FOUND (unchanged) ───────────────────
               Row(
                 children: [
                   Expanded(
@@ -355,6 +485,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
+              // ── CARE & SERVICES (new) ─────────────────────────────────────
+              const SizedBox(height: 14),
+              _CareServicesCard(isEl: isEl),
+              // ── REMINDER STRIP ────────────────────────────────────────────
               FutureBuilder<PetHealthEvent?>(
                 future: _getNextReminder(),
                 builder: (context, reminderSnap) {
@@ -482,6 +616,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               const SizedBox(height: 32),
+              // ── MY PETS (unchanged) ───────────────────────────────────────
               Row(
                 children: [
                   Expanded(
@@ -586,6 +721,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               const SizedBox(height: 22),
+              // ── ADOPTION (unchanged) ──────────────────────────────────────
               _AdoptionPromoCard(
                 isEl: isEl,
                 onTap: _openAdoptions,
@@ -600,164 +736,100 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _HomeLostAlertBar extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────────────────────
+// UNIFIED ALERT BANNER
+// Logic:
+//   alertCount > 0            → nearby version (open + map buttons)
+//   alertCount == 0, active>0 → active-only version (map button)
+//   both == 0                 → caller hides via `if (hasBanner)` guard
+// ─────────────────────────────────────────────────────────────────────────────
+class _HomeAlertBanner extends StatelessWidget {
   final bool isEl;
   final int alertCount;
-  final VoidCallback onTap;
+  final int activeCount;
+  /// Explicit: true = show nearby version, false = show active version
+  final bool showNearby;
+  final VoidCallback onOpenReports;
+  final VoidCallback onOpenMap;
 
-  const _HomeLostAlertBar({
+  const _HomeAlertBanner({
     required this.isEl,
     required this.alertCount,
-    required this.onTap,
+    required this.activeCount,
+    required this.showNearby,
+    required this.onOpenReports,
+    required this.onOpenMap,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    final hasAlerts = alertCount > 0;
+  // Shared gradient: soft aqua → teal → warm orange
+  static const _gradient = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [
+      Color(0xFF26C6DA), // aqua / cyan 400
+      Color(0xFF4DB6AC), // teal 300
+      Color(0xFFFF8A65), // deep-orange 300 (warm)
+    ],
+  );
 
-    final String title = hasAlerts
-        ? (isEl
-            ? '$alertCount ειδοποίηση${alertCount > 1 ? 'σεις' : ''} κοντά σου'
-            : '$alertCount alert${alertCount > 1 ? 's' : ''} near you')
-        : (isEl ? 'Δεν υπάρχουν κοντινές ειδοποιήσεις' : 'No alerts nearby');
+  static const _shadowColor = Color(0xFF26C6DA);
 
-    final String subtitle = hasAlerts
-        ? (isEl ? 'Πάτησε για όλες τις δηλώσεις' : 'Tap to view all reports')
-        : (isEl ? 'Πάτησε για να δεις δηλώσεις' : 'Tap to explore reports');
+  Widget _buildNearbyContent(bool isEl) {
+    final count = alertCount;
+    // Correct singular/plural — avoid broken string interpolation inside suffixes
+    final title = isEl
+        ? (count == 1
+            ? '1 ειδοποίηση κοντά σου'
+            : '$count ειδοποιήσεις κοντά σου')
+        : (count == 1 ? '1 alert near you' : '$count alerts near you');
+    // Short subtitle — prevents layout overflow on small screens
+    final subtitle =
+        isEl ? 'Πάτησε για προβολή' : 'Tap to open';
 
-    final IconData icon =
-        hasAlerts ? Icons.warning_amber_rounded : Icons.check_circle_rounded;
-
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(28),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(28),
-        onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            gradient: const LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [
-                Color(0xFFF34A3A),
-                Color(0xFFF26A2E),
-                Color(0xFFF6A62C),
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFF26A2E).withOpacity(0.22),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Stack(
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _PulsingAlertBadge(icon: Icons.warning_amber_rounded),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Positioned(
-                left: -20,
-                bottom: -24,
-                child: Container(
-                  height: 110,
-                  width: 140,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(999),
+              // FittedBox → scales down title gracefully if it doesn't fit,
+              // never truncates mid-word
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withOpacity(0.22),
+                        blurRadius: 6,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              Positioned(
-                right: 96,
-                top: 10,
-                child: Icon(
-                  Icons.pets,
-                  size: 20,
-                  color: Colors.white.withOpacity(0.10),
-                ),
-              ),
-              Positioned(
-                right: 66,
-                top: 34,
-                child: Icon(
-                  Icons.favorite,
-                  size: 22,
-                  color: Colors.white.withOpacity(0.10),
-                ),
-              ),
-              Positioned(
-                right: 24,
-                top: 18,
-                child: Icon(
-                  Icons.pets,
-                  size: 30,
-                  color: Colors.white.withOpacity(0.10),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-                child: Row(
-                  children: [
-                    _PulsingAlertBadge(icon: icon),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            subtitle,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.95),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.92),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            isEl ? 'Άνοιγμα' : 'Open',
-                            style: const TextStyle(
-                              color: Color(0xFF37474F),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(
-                            Icons.chevron_right_rounded,
-                            color: Color(0xFF37474F),
-                            size: 18,
-                          ),
-                        ],
-                      ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.86),
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w500,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withOpacity(0.14),
+                      blurRadius: 4,
                     ),
                   ],
                 ),
@@ -765,11 +837,203 @@ class _HomeLostAlertBar extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(width: 8),
+        // Both buttons in same Row — same height, same style
+        _BannerButton(
+          label: isEl ? 'Άνοιγμα' : 'Open',
+          icon: Icons.chevron_right_rounded,
+          onTap: onOpenReports,
+        ),
+        const SizedBox(width: 6),
+        _BannerButton(
+          label: isEl ? 'Χάρτης' : 'Map',
+          icon: Icons.map_outlined,
+          onTap: onOpenMap,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActiveContent(bool isEl) {
+    // Shorter title — fits even on narrow screens
+    final title = isEl ? 'Ενεργές απώλειες' : 'Active lost alerts';
+    // Correct singular/plural per spec
+    final subtitle = isEl
+        ? (activeCount == 1
+            ? '1 ζώο αγνοείται κοντά σου'
+            : '$activeCount ζώα αγνοούνται κοντά σου')
+        : (activeCount == 1
+            ? '1 pet missing near you'
+            : '$activeCount pets missing near you');
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Circular icon — matches nearby badge for visual consistency
+        Container(
+          height: 56,
+          width: 56,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.24),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.white.withOpacity(0.16),
+                blurRadius: 10,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.location_searching_rounded,
+            color: Colors.white,
+            size: 32,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // FittedBox → title scales down gracefully, never truncates
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withOpacity(0.22),
+                        blurRadius: 6,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 2),
+              // Subtitle also uses FittedBox for safety
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.86),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withOpacity(0.14),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        _BannerButton(
+          label: isEl ? 'Χάρτης' : 'Map',
+          icon: Icons.map_outlined,
+          onTap: onOpenMap,
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(24),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: showNearby ? onOpenReports : onOpenMap,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: _gradient,
+            boxShadow: [
+              BoxShadow(
+                color: _shadowColor.withOpacity(0.28),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          // Direct content — no Stack needed, avoids clipping of decorative elements
+          child: showNearby
+              ? _buildNearbyContent(isEl)
+              : _buildActiveContent(isEl),
+        ),
       ),
     );
   }
 }
 
+// Small white/cream pill button used inside the banner
+class _BannerButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _BannerButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        // Compact padding — gives more horizontal room to text column
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFDF7F2),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(icon, color: const Color(0xFF00695C), size: 13),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF00695C),
+                fontWeight: FontWeight.w700,
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PULSING ALERT BADGE (unchanged — used by nearby state)
+// ─────────────────────────────────────────────────────────────────────────────
 class _PulsingAlertBadge extends StatefulWidget {
   final IconData icon;
 
@@ -811,149 +1075,118 @@ class _PulsingAlertBadgeState extends State<_PulsingAlertBadge>
     return ScaleTransition(
       scale: _scale,
       child: Container(
-        height: 54,
-        width: 54,
+        height: 56,
+        width: 56,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.22),
-          borderRadius: BorderRadius.circular(18),
+          // Circular — visually dominant focal point
+          color: Colors.white.withOpacity(0.26),
+          shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.white.withOpacity(0.10),
-              blurRadius: 8,
-              spreadRadius: 1,
+              color: Colors.white.withOpacity(0.18),
+              blurRadius: 10,
+              spreadRadius: 2,
             ),
           ],
         ),
         child: Icon(
           widget.icon,
           color: Colors.white,
-          size: 34,
+          size: 36,
         ),
       ),
     );
   }
 }
 
-class _HomeActiveLostBanner extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────────────────────
+// CARE & SERVICES CARD (new)
+// ─────────────────────────────────────────────────────────────────────────────
+class _CareServicesCard extends StatelessWidget {
   final bool isEl;
-  final int activeCount;
-  final VoidCallback onTap;
 
-  const _HomeActiveLostBanner({
-    required this.isEl,
-    required this.activeCount,
-    required this.onTap,
-  });
+  const _CareServicesCard({required this.isEl});
 
   @override
   Widget build(BuildContext context) {
-    final title = isEl ? 'ΕΝΕΡΓΕΣ ΑΓΓΕΛΙΕΣ ΑΠΩΛΕΙΑΣ' : 'ACTIVE LOST ALERTS';
+    final title = isEl ? 'Φροντίδα & Υπηρεσίες' : 'Care & Services';
     final subtitle = isEl
-        ? '$activeCount ζώα αγνοούνται κοντά σου'
-        : '$activeCount pets currently missing near you';
+        ? 'Κτηνίατροι, grooming & υπηρεσίες για το κατοικίδιό σου'
+        : 'Vets, grooming & services for your pet';
 
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(20),
       child: InkWell(
-        borderRadius: BorderRadius.circular(24),
-        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        onTap: () {
+          // TODO: navigate to Care & Services screen
+        },
         child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            gradient: const LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [
-                Color(0xFFF34A3A),
-                Color(0xFFF26A2E),
-                Color(0xFFF6A62C),
-              ],
-            ),
+            color: const Color(0xFFF0FAFB),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFB2EBF2), width: 1.2),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFF26A2E).withOpacity(0.16),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
+                color: const Color(0xFF26C6DA).withOpacity(0.06),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Row(
             children: [
+              // Icon container
               Container(
-                height: 48,
-                width: 48,
+                height: 46,
+                width: 46,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(15),
+                  color: const Color(0xFFE0F7FA),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(
-                  Icons.location_searching_rounded,
-                  color: Colors.white,
-                  size: 26,
+                  Icons.medical_services_rounded,
+                  color: Color(0xFF00ACC1),
+                  size: 22,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
+              // Text
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        height: 1.25,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.textSecondary,
+                        height: 1.3,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.92),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.map_outlined,
-                      color: Color(0xFF5B5147),
-                      size: 18,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      isEl ? 'Χάρτης' : 'Map',
-                      style: const TextStyle(
-                        color: Color(0xFF5B5147),
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
+              const SizedBox(width: 8),
+              // Chevron
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFF00ACC1),
+                size: 22,
               ),
             ],
           ),
@@ -963,6 +1196,9 @@ class _HomeActiveLostBanner extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// DASHBOARD ADD PET BUTTON (unchanged)
+// ─────────────────────────────────────────────────────────────────────────────
 class _DashboardAddPetButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
@@ -1018,6 +1254,9 @@ class _DashboardAddPetButton extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// QUICK ACTION CARD (unchanged)
+// ─────────────────────────────────────────────────────────────────────────────
 class _QuickActionCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -1122,6 +1361,9 @@ class _QuickActionCard extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ADOPTION PROMO CARD (unchanged)
+// ─────────────────────────────────────────────────────────────────────────────
 class _AdoptionPromoCard extends StatelessWidget {
   final bool isEl;
   final VoidCallback onTap;
@@ -1235,6 +1477,9 @@ class _AdoptionPromoCard extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PET MINI CARD (unchanged)
+// ─────────────────────────────────────────────────────────────────────────────
 class _PetMiniCard extends StatelessWidget {
   final Pet pet;
   final String meta;

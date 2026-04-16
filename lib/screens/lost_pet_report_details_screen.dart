@@ -814,14 +814,30 @@ Shared via Petbook
                           ),
                         ),
                       if (!isOwner) const SizedBox(width: 10),
-                      Expanded(
-                        child: _DetailsActionButton(
-                          label: isEl ? 'Κοινοπ.' : 'Share',
-                          icon: Icons.share_outlined,
-                          onTap: _shareReport,
-                          color: AppTheme.textSecondary,
+                      // Share: compact & right-aligned when it is the only
+                      // visible action (owner with no phone); expanded otherwise.
+                      if (isOwner && !_hasPhone)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: SizedBox(
+                            width: 140,
+                            child: _DetailsActionButton(
+                              label: isEl ? 'Κοινοπ.' : 'Share',
+                              icon: Icons.share_outlined,
+                              onTap: _shareReport,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                        )
+                      else
+                        Expanded(
+                          child: _DetailsActionButton(
+                            label: isEl ? 'Κοινοπ.' : 'Share',
+                            icon: Icons.share_outlined,
+                            onTap: _shareReport,
+                            color: AppTheme.textSecondary,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ],
