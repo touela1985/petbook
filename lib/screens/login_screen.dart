@@ -53,34 +53,40 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _forgotPassword() async {
     final el = _isEl;
     final emailCtrl = TextEditingController(text: _emailCtrl.text.trim());
+    String? email;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(el ? 'Επαναφορά κωδικού' : 'Reset password'),
-        content: TextField(
-          controller: emailCtrl,
-          keyboardType: TextInputType.emailAddress,
-          decoration: InputDecoration(
-            labelText: 'Email',
-            hintText: el ? 'Εισήγαγε το email σου' : 'Enter your email',
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(el ? 'Επαναφορά κωδικού' : 'Reset password'),
+          content: TextField(
+            controller: emailCtrl,
+            keyboardType: TextInputType.emailAddress,
+            decoration: InputDecoration(
+              labelText: 'Email',
+              hintText: el ? 'Εισήγαγε το email σου' : 'Enter your email',
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(el ? 'Ακύρωση' : 'Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(el ? 'Αποστολή' : 'Send'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(el ? 'Ακύρωση' : 'Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(el ? 'Αποστολή' : 'Send'),
-          ),
-        ],
-      ),
-    );
+      );
 
-    if (confirmed != true || !mounted) return;
-    final email = emailCtrl.text.trim();
+      if (confirmed != true || !mounted) return;
+      email = emailCtrl.text.trim();
+    } finally {
+      emailCtrl.dispose();
+    }
+
     if (email.isEmpty) return;
 
     final error = await _authService.sendPasswordResetEmail(email, isEl: el);

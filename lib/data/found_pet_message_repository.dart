@@ -43,8 +43,6 @@ class FoundPetMessageRepository {
 
   Future<List<FoundPetMessage>> _loadFirestoreForReport(
       String reportId, String uid) async {
-    debugPrint('[FoundMsg] ▶ Firestore read START — reportId: $reportId, uid: $uid');
-
     // Two separate single-field queries to satisfy Firestore security rules
     // without requiring composite indexes.
     // Rule: senderUserId==uid OR receiverUserId==uid OR reportOwnerUserId==uid
@@ -68,17 +66,10 @@ class FoundPetMessageRepository {
       final msg = FoundPetMessage.fromMap(doc.data());
       if (msg.reportId != reportId) continue;
       seen[msg.id] = msg;
-      debugPrint(
-        '[FoundMsg] ✅ read doc — id: ${msg.id} '
-        'sender: ${msg.senderUserId} '
-        'receiver: ${msg.receiverUserId} '
-        'reportOwner: ${msg.reportOwnerUserId}',
-      );
     }
 
     final messages = seen.values.toList();
     messages.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    debugPrint('[FoundMsg] ✅ Firestore read DONE — ${messages.length} messages for report $reportId');
     return messages;
   }
 
@@ -90,12 +81,9 @@ class FoundPetMessageRepository {
     try {
       final firestoreMessages = await _loadFirestoreForReport(reportId, uid);
       if (firestoreMessages.isNotEmpty) return firestoreMessages;
-    } catch (e) {
-      debugPrint('[FoundMsg] ❌ Firestore read FAILED: $e');
-    }
+    } catch (_) {}
 
     // Fallback to local only if Firestore fails or returns empty.
-    debugPrint('[FoundMsg] ⚠ Falling back to local storage for report $reportId');
     final local = await _loadLocal();
     final filtered = local.where((m) => m.reportId == reportId).toList();
     filtered.sort((a, b) => b.timestamp.compareTo(a.timestamp));
@@ -105,17 +93,10 @@ class FoundPetMessageRepository {
   Future<bool> addMessage(FoundPetMessage message) async {
     // 1. Firestore — primary
     bool firestoreOk = false;
-    debugPrint('[FoundMsg] ▶ Firestore write START — id: ${message.id}');
-    debugPrint('[FoundMsg] payload: ${message.toMap()}');
     try {
       await _setFirestore(message);
       firestoreOk = true;
-      debugPrint('[FoundMsg] ✅ Firestore write SUCCESS — id: ${message.id}');
-    } catch (e, stack) {
-      debugPrint('[FoundMsg] ❌ Firestore write FAILED — id: ${message.id}');
-      debugPrint('[FoundMsg] error: $e');
-      debugPrint('[FoundMsg] stack: $stack');
-    }
+    } catch (_) {}
 
     // 2. Local — always, even when Firestore fails (offline safety)
     final messages = await _loadLocal();

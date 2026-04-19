@@ -54,6 +54,7 @@ class _PickLocationScreenState extends State<PickLocationScreen> {
         ),
       );
 
+      if (!mounted) return;
       _mapController?.animateCamera(
         CameraUpdate.newCameraPosition(
           CameraPosition(

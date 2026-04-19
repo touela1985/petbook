@@ -222,7 +222,7 @@ class NotificationService {
     if (reminderDate.isBefore(DateTime.now())) return;
 
     final scheduledDate = tz.TZDateTime.from(reminderDate, tz.local);
-    final id = event.id.hashCode.abs();
+    final id = event.id.hashCode.abs() & 0x7FFFFFFF;
 
     await _localNotifications.zonedSchedule(
       id,
@@ -245,7 +245,7 @@ class NotificationService {
   }
 
   Future<void> cancelHealthReminder(String eventId) async {
-    await _localNotifications.cancel(eventId.hashCode.abs());
+    await _localNotifications.cancel(eventId.hashCode.abs() & 0x7FFFFFFF);
   }
 
   // ─── Token persistence ────────────────────────────────────────────────────

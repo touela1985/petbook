@@ -99,22 +99,34 @@ class _SendLostPetMessageScreenState extends State<SendLostPetMessageScreen> {
       isRead: false,
     );
 
-    await _repo.addMessage(message);
+    final firestoreOk = await _repo.addMessage(message);
     // TODO Step 20: trigger push notification to receiverUserId via Cloud Function
 
     if (!mounted) return;
 
     setState(() => _isSaving = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          _isEl ? 'Το μήνυμα στάλθηκε.' : 'Message sent successfully.',
+    if (firestoreOk) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isEl ? 'Το μήνυμα στάλθηκε.' : 'Message sent successfully.',
+          ),
         ),
-      ),
-    );
-
-    Navigator.pop(context, true);
+      );
+      Navigator.pop(context, true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isEl
+                ? 'Σφάλμα αποστολής. Έλεγξε τη σύνδεσή σου και δοκίμασε ξανά.'
+                : 'Send failed. Check your connection and try again.',
+          ),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
   }
 
   @override

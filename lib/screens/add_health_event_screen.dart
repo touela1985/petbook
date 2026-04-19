@@ -37,6 +37,7 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
   DateTime _selectedDate = DateTime.now();
   bool _hasReminder = false;
   DateTime? _reminderDate;
+  bool _isSaving = false;
 
   bool get _isEditMode => widget.existingEvent != null;
   bool get _isEl => Localizations.localeOf(context).languageCode == 'el';
@@ -247,6 +248,7 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
   }
 
   Future<void> _saveEvent() async {
+    if (_isSaving) return;
     final isEl = _isEl;
 
     String title = '';
@@ -418,16 +420,21 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
       reminderDate: reminderDate,
     );
 
-    if (_isEditMode) {
-      await NotificationService.instance.cancelHealthReminder(event.id);
-      await _repo.updateEvent(event);
-    } else {
-      await _repo.addEvent(event);
-    }
-    await NotificationService.instance.scheduleHealthReminder(event);
+    setState(() => _isSaving = true);
+    try {
+      if (_isEditMode) {
+        await NotificationService.instance.cancelHealthReminder(event.id);
+        await _repo.updateEvent(event);
+      } else {
+        await _repo.addEvent(event);
+      }
+      await NotificationService.instance.scheduleHealthReminder(event);
 
-    if (!mounted) return;
-    Navigator.pop(context, true);
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -901,8 +908,17 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
           child: SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: _saveEvent,
-              icon: const Icon(Icons.save_rounded),
+              onPressed: _isSaving ? null : _saveEvent,
+              icon: _isSaving
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.save_rounded),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 17),
                 shape: RoundedRectangleBorder(

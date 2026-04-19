@@ -461,10 +461,24 @@ Shared via Petbook
       userId: _report.userId,
     );
 
-    await _reportRepository.updateReport(updatedReport);
-
-    if (!mounted) return;
-    Navigator.pop(context, true);
+    try {
+      await _reportRepository.updateReport(updatedReport);
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isMarkingResolved = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isEl
+                ? 'Σφάλμα. Έλεγξε τη σύνδεσή σου και δοκίμασε ξανά.'
+                : 'Error. Check your connection and try again.',
+          ),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
   }
 
   @override

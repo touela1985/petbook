@@ -142,6 +142,8 @@ class _AddLostPetReportScreenState
     try {
       final existing = widget.initialReport;
 
+      bool imageUploadFailed = false;
+
       if (existing == null) {
         final reportId = _uuid.v4();
 
@@ -149,6 +151,7 @@ class _AddLostPetReportScreenState
         if (_selectedImage != null) {
           final bytes = await _selectedImage!.readAsBytes();
           uploadedUrl = await StorageService.uploadLostPetImage(bytes, reportId);
+          if (uploadedUrl == null) imageUploadFailed = true;
         }
 
         final report = LostPetReport(
@@ -174,6 +177,7 @@ class _AddLostPetReportScreenState
         if (_selectedImage != null) {
           final bytes = await _selectedImage!.readAsBytes();
           uploadedUrl = await StorageService.uploadLostPetImage(bytes, existing.id);
+          if (uploadedUrl == null) imageUploadFailed = true;
         }
 
         final updatedReport = LostPetReport(
@@ -197,6 +201,18 @@ class _AddLostPetReportScreenState
       }
 
       if (!mounted) return;
+      if (imageUploadFailed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _isEl
+                  ? 'Η αναφορά αποθηκεύτηκε, αλλά η εικόνα δεν ανέβηκε (έλεγξε σύνδεση).'
+                  : 'Report saved, but the photo could not be uploaded (check connection).',
+            ),
+            backgroundColor: Colors.orange.shade700,
+          ),
+        );
+      }
       Navigator.pop(context, true);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

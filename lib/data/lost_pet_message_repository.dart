@@ -88,16 +88,20 @@ class LostPetMessageRepository {
     return filtered;
   }
 
-  Future<void> addMessage(LostPetMessage message) async {
-    // 1. Local — always
+  Future<bool> addMessage(LostPetMessage message) async {
+    // 1. Firestore — primary
+    bool firestoreOk = false;
+    try {
+      await _setFirestore(message);
+      firestoreOk = true;
+    } catch (_) {}
+
+    // 2. Local — always, even when Firestore fails (offline safety)
     final messages = await _loadLocal();
     messages.add(message);
     await _saveLocal(messages);
 
-    // 2. Firestore — silent fail
-    try {
-      await _setFirestore(message);
-    } catch (_) {}
+    return firestoreOk;
   }
 
   Future<void> saveAllMessages(List<LostPetMessage> messages) async {

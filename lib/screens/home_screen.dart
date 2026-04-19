@@ -49,8 +49,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final reports = await _lostRepo.getReports();
     final activeReports = reports.where((r) => !r.isResolved).toList();
 
-    debugPrint('[Banner] Total active lost reports: ${activeReports.length}');
-
     // Get user position — same pattern as lost_found_screen.dart
     Position? userPosition;
     try {
@@ -65,33 +63,22 @@ class _HomeScreenState extends State<HomeScreen> {
           userPosition = await Geolocator.getCurrentPosition();
         }
       }
-    } catch (e) {
-      debugPrint('[Banner] Location unavailable: $e');
-    }
+    } catch (_) {}
 
     if (userPosition == null) {
-      // No location → no nearby banner, show all active as active-only
-      debugPrint(
-          '[Banner] No location — nearbyCount=0, activeLostCount=${activeReports.length}');
       return [0, activeReports.length];
     }
 
     // Split: nearby (distanceMeters <= 3000) vs far
     final nearbyIds = <String>{};
     for (final report in activeReports) {
-      if (report.latitude == null || report.longitude == null) {
-        debugPrint(
-            '[Banner] "${report.petName}" — no coordinates, skipped from nearby');
-        continue;
-      }
+      if (report.latitude == null || report.longitude == null) continue;
       final distMeters = Geolocator.distanceBetween(
         userPosition.latitude,
         userPosition.longitude,
         report.latitude!,
         report.longitude!,
       );
-      debugPrint(
-          '[Banner] "${report.petName}" — distanceMeters=${distMeters.toStringAsFixed(0)}');
       if (distMeters <= _nearbyThresholdMeters) {
         nearbyIds.add(report.id);
       }
@@ -101,8 +88,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final activeLostCount =
         activeReports.where((r) => !nearbyIds.contains(r.id)).length;
 
-    debugPrint(
-        '[Banner] nearbyCount=$nearbyCount, activeLostCount=$activeLostCount');
     return [nearbyCount, activeLostCount];
   }
 

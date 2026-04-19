@@ -5,7 +5,14 @@
       "Bash(flutter pub:*)",
       "Bash(flutter analyze:*)",
       "Bash(git config:*)",
-      "Bash(firebase deploy *)"
+      "Bash(firebase deploy *)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(where java *)",
+      "Bash(where keytool *)",
+      "Bash(\"/c/Program Files/Android/Android Studio/jbr/bin/java.exe\" -version)",
+      "Bash(\"/c/Program Files/Android/Android Studio/jbr/bin/keytool.exe\")",
+      "Bash(flutter clean *)",
+      "Bash(flutter build *)"
     ]
   }
 }

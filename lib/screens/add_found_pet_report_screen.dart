@@ -135,12 +135,15 @@ class _AddFoundPetReportScreenState extends State<AddFoundPetReportScreen> {
     try {
       final existing = widget.initialReport;
 
+      bool imageUploadFailed = false;
+
       if (existing == null) {
         final reportId = _uuid.v4();
         String? photoUrl;
         if (_selectedImage != null) {
           final bytes = await _selectedImage!.readAsBytes();
           photoUrl = await StorageService.uploadFoundPetImage(bytes, reportId);
+          if (photoUrl == null) imageUploadFailed = true;
         }
         final report = FoundPetReport(
           id: reportId,
@@ -161,8 +164,12 @@ class _AddFoundPetReportScreenState extends State<AddFoundPetReportScreen> {
         String? photoUrl = existing.photoUrl;
         if (_selectedImage != null) {
           final bytes = await _selectedImage!.readAsBytes();
-          photoUrl = await StorageService.uploadFoundPetImage(bytes, existing.id)
-              ?? existing.photoUrl;
+          final uploaded = await StorageService.uploadFoundPetImage(bytes, existing.id);
+          if (uploaded == null) {
+            imageUploadFailed = true;
+          } else {
+            photoUrl = uploaded;
+          }
         }
         final updatedReport = FoundPetReport(
           id: existing.id,
@@ -182,6 +189,18 @@ class _AddFoundPetReportScreenState extends State<AddFoundPetReportScreen> {
       }
 
       if (!mounted) return;
+      if (imageUploadFailed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _isEl
+                  ? 'Η αναφορά αποθηκεύτηκε, αλλά η εικόνα δεν ανέβηκε (έλεγξε σύνδεση).'
+                  : 'Report saved, but the photo could not be uploaded (check connection).',
+            ),
+            backgroundColor: Colors.orange.shade700,
+          ),
+        );
+      }
       Navigator.pop(context, true);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
