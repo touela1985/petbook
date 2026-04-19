@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 
 import '../data/lost_pet_report_repository.dart';
 import '../models/lost_pet_report.dart';
+import '../services/profile_service.dart';
 import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
 import 'pick_location_screen.dart';
@@ -59,6 +60,18 @@ class _AddLostPetReportScreenState
       _selectedDate = report.lastSeenDate;
       _selectedLatitude = report.latitude;
       _selectedLongitude = report.longitude;
+    } else {
+      _prefillFromProfile();
+    }
+  }
+
+  Future<void> _prefillFromProfile() async {
+    final data = await ProfileService().load();
+    if (!mounted) return;
+    if (data.phone.trim().isNotEmpty) {
+      setState(() {
+        _phoneController.text = data.phone.trim();
+      });
     }
   }
 

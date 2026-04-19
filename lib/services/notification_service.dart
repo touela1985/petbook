@@ -5,7 +5,10 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest_all.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
 
+import '../models/pet_health_event.dart';
 import 'profile_service.dart';
 
 // Must be a top-level function — called by FCM when app is terminated/background.
@@ -51,6 +54,9 @@ class NotificationService {
   // ─── Initialization ───────────────────────────────────────────────────────
 
   Future<void> initialize() async {
+    // Initialize timezone database for scheduled local notifications.
+    tzdata.initializeTimeZones();
+
     // Register the background message handler.
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
@@ -198,22 +204,31 @@ class NotificationService {
     return {'type': type, 'reportId': reportId};
   }
 
-  // ─── Debug helpers (temporary — remove after testing) ────────────────────
+  // ─── Topic subscriptions ──────────────────────────────────────────────────
 
-  /// Returns the current FCM token and prints it to console.
-  Future<String?> debugGetAndPrintToken() async {
-    final token = await _fcm.getToken();
-    // ignore: avoid_print
-    print('[FCM DEBUG] token: $token');
-    return token;
+  Future<void> subscribeToLostReports() async {
+    await _fcm.subscribeToTopic('lost_reports');
   }
 
-  /// Shows an immediate local notification to verify the channel works.
-  Future<void> debugShowTestNotification() async {
-    await _localNotifications.show(
-      999,
-      'Petbook — Test',
-      'Οι notifications λειτουργούν!',
+  Future<void> unsubscribeFromLostReports() async {
+    await _fcm.unsubscribeFromTopic('lost_reports');
+  }
+
+  // ─── Health reminder scheduling ───────────────────────────────────────────
+
+  Future<void> scheduleHealthReminder(PetHealthEvent event) async {
+    final reminderDate = event.reminderDate;
+    if (reminderDate == null) return;
+    if (reminderDate.isBefore(DateTime.now())) return;
+
+    final scheduledDate = tz.TZDateTime.from(reminderDate, tz.local);
+    final id = event.id.hashCode.abs();
+
+    await _localNotifications.zonedSchedule(
+      id,
+      event.title,
+      event.title,
+      scheduledDate,
       const NotificationDetails(
         android: AndroidNotificationDetails(
           _channelId,
@@ -223,17 +238,14 @@ class NotificationService {
         ),
         iOS: DarwinNotificationDetails(),
       ),
+      androidScheduleMode: AndroidScheduleMode.inexact,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 
-  // ─── Topic subscriptions ──────────────────────────────────────────────────
-
-  Future<void> subscribeToLostReports() async {
-    await _fcm.subscribeToTopic('lost_reports');
-  }
-
-  Future<void> unsubscribeFromLostReports() async {
-    await _fcm.unsubscribeFromTopic('lost_reports');
+  Future<void> cancelHealthReminder(String eventId) async {
+    await _localNotifications.cancel(eventId.hashCode.abs());
   }
 
   // ─── Token persistence ────────────────────────────────────────────────────

@@ -10,31 +10,50 @@ class AuthService {
 
   User? get currentUser => _auth.currentUser;
 
-  Future<String?> signUpWithEmailPassword(String email, String password) async {
+  Future<String?> signUpWithEmailPassword(
+    String email,
+    String password, {
+    bool isEl = false,
+  }) async {
     try {
       await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
-      return null; // επιτυχία
+      return null;
     } on FirebaseAuthException catch (e) {
-      return _mapErrorCode(e.code);
+      return _mapErrorCode(e.code, isEl: isEl);
     } catch (_) {
-      return 'Προέκυψε σφάλμα. Δοκίμασε ξανά.';
+      return isEl ? 'Προέκυψε σφάλμα. Δοκίμασε ξανά.' : 'An error occurred. Please try again.';
     }
   }
 
-  Future<String?> signInWithEmailPassword(String email, String password) async {
+  Future<String?> signInWithEmailPassword(
+    String email,
+    String password, {
+    bool isEl = false,
+  }) async {
     try {
       await _auth.signInWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
-      return null; // επιτυχία
+      return null;
     } on FirebaseAuthException catch (e) {
-      return _mapErrorCode(e.code);
+      return _mapErrorCode(e.code, isEl: isEl);
     } catch (_) {
-      return 'Προέκυψε σφάλμα. Δοκίμασε ξανά.';
+      return isEl ? 'Προέκυψε σφάλμα. Δοκίμασε ξανά.' : 'An error occurred. Please try again.';
+    }
+  }
+
+  Future<String?> sendPasswordResetEmail(String email, {bool isEl = false}) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email.trim());
+      return null;
+    } on FirebaseAuthException catch (e) {
+      return _mapErrorCode(e.code, isEl: isEl);
+    } catch (_) {
+      return isEl ? 'Προέκυψε σφάλμα. Δοκίμασε ξανά.' : 'An error occurred. Please try again.';
     }
   }
 
@@ -74,24 +93,28 @@ class AuthService {
     // NOTE: 'pet_health_events' is LOCAL-ONLY — isolation handled via userId field filtering.
   }
 
-  String _mapErrorCode(String code) {
+  String _mapErrorCode(String code, {bool isEl = false}) {
     switch (code) {
       case 'invalid-email':
-        return 'Μη έγκυρο email.';
+        return isEl ? 'Μη έγκυρο email.' : 'Invalid email address.';
       case 'user-not-found':
       case 'wrong-password':
       case 'invalid-credential':
-        return 'Λανθασμένο email ή κωδικός.';
+        return isEl ? 'Λανθασμένο email ή κωδικός.' : 'Incorrect email or password.';
       case 'email-already-in-use':
-        return 'Το email χρησιμοποιείται ήδη.';
+        return isEl ? 'Το email χρησιμοποιείται ήδη.' : 'This email is already in use.';
       case 'weak-password':
-        return 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.';
+        return isEl
+            ? 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.'
+            : 'Password must be at least 6 characters.';
       case 'network-request-failed':
-        return 'Δεν υπάρχει σύνδεση δικτύου.';
+        return isEl ? 'Δεν υπάρχει σύνδεση δικτύου.' : 'No network connection.';
       case 'too-many-requests':
-        return 'Πολλές αποτυχημένες προσπάθειες. Δοκίμασε αργότερα.';
+        return isEl
+            ? 'Πολλές αποτυχημένες προσπάθειες. Δοκίμασε αργότερα.'
+            : 'Too many failed attempts. Try again later.';
       default:
-        return 'Προέκυψε σφάλμα. Δοκίμασε ξανά.';
+        return isEl ? 'Προέκυψε σφάλμα. Δοκίμασε ξανά.' : 'An error occurred. Please try again.';
     }
   }
 }

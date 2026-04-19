@@ -71,7 +71,79 @@ class _AdoptionListScreenState extends State<AdoptionListScreen> {
     }
   }
 
+  Future<void> _markAsAdopted(AdoptionPet pet) async {
+    final isEl = _isEl;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(isEl ? 'Σήμανση ως υιοθετήθηκε' : 'Mark as adopted'),
+        content: Text(
+          isEl
+              ? 'Θέλεις να σημάνεις αυτή την αγγελία ως υιοθετήθηκε;'
+              : 'Mark this listing as adopted?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(isEl ? 'Ακύρωση' : 'Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(isEl ? 'Υιοθετήθηκε' : 'Mark adopted'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    final updated = AdoptionPet(
+      id: pet.id,
+      name: pet.name,
+      type: pet.type,
+      age: pet.age,
+      location: pet.location,
+      description: pet.description,
+      contactPhone: pet.contactPhone,
+      photoPath: pet.photoPath,
+      photoUrl: pet.photoUrl,
+      adopted: true,
+      userId: pet.userId,
+    );
+    await _repo.updatePet(updated);
+    if (mounted) {
+      setState(() {
+        _petsFuture = _loadPets();
+      });
+    }
+  }
+
   Future<void> _deleteAdoption(AdoptionPet pet) async {
+    final isEl = _isEl;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(isEl ? 'Διαγραφή αγγελίας' : 'Delete listing'),
+        content: Text(
+          isEl
+              ? 'Θέλεις σίγουρα να διαγράψεις αυτή την αγγελία υιοθεσίας;'
+              : 'Are you sure you want to delete this adoption listing?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(isEl ? 'Ακύρωση' : 'Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(isEl ? 'Διαγραφή' : 'Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
     await _repo.deletePet(pet.id);
     if (mounted) {
       setState(() {
@@ -195,6 +267,9 @@ class _AdoptionListScreenState extends State<AdoptionListScreen> {
                                           case _AdoptionMenuAction.edit:
                                             _editAdoption(pet);
                                             break;
+                                          case _AdoptionMenuAction.markAdopted:
+                                            _markAsAdopted(pet);
+                                            break;
                                           case _AdoptionMenuAction.delete:
                                             _deleteAdoption(pet);
                                             break;
@@ -205,6 +280,11 @@ class _AdoptionListScreenState extends State<AdoptionListScreen> {
                                           value: _AdoptionMenuAction.edit,
                                           child: Text(isEl ? 'Επεξεργασία' : 'Edit'),
                                         ),
+                                        if (!pet.adopted)
+                                          PopupMenuItem(
+                                            value: _AdoptionMenuAction.markAdopted,
+                                            child: Text(isEl ? 'Υιοθετήθηκε ✓' : 'Mark as adopted ✓'),
+                                          ),
                                         PopupMenuItem(
                                           value: _AdoptionMenuAction.delete,
                                           child: Text(isEl ? 'Διαγραφή' : 'Delete'),
@@ -213,6 +293,30 @@ class _AdoptionListScreenState extends State<AdoptionListScreen> {
                                     ),
                                 ],
                               ),
+                              if (pet.adopted) ...[
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(
+                                      color: Colors.green.withOpacity(0.35),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    isEl ? '✓ Υιοθετήθηκε' : '✓ Adopted',
+                                    style: const TextStyle(
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
                               if (pet.type.trim().isNotEmpty) ...[
                                 const SizedBox(height: 4),
                                 Text(
@@ -285,4 +389,4 @@ class _AdoptionListScreenState extends State<AdoptionListScreen> {
   }
 }
 
-enum _AdoptionMenuAction { edit, delete }
+enum _AdoptionMenuAction { edit, markAdopted, delete }

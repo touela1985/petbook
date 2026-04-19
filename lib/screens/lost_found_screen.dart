@@ -140,11 +140,65 @@ class _LostFoundScreenState extends State<LostFoundScreen> {
   }
 
   Future<void> _deleteLostReport(LostPetReport report) async {
+    final isEl = Localizations.localeOf(context).languageCode == 'el';
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(isEl ? 'Διαγραφή αναφοράς' : 'Delete report'),
+        content: Text(
+          isEl
+              ? 'Θέλεις σίγουρα να διαγράψεις αυτή την αναφορά χαμένου ζώου;'
+              : 'Are you sure you want to delete this lost pet report?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(isEl ? 'Ακύρωση' : 'Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(isEl ? 'Διαγραφή' : 'Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
     await _lostRepo.deleteReport(report.id);
     await _refreshScreen();
   }
 
   Future<void> _deleteFoundReport(FoundPetReport report) async {
+    final isEl = Localizations.localeOf(context).languageCode == 'el';
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(isEl ? 'Διαγραφή αναφοράς' : 'Delete report'),
+        content: Text(
+          isEl
+              ? 'Θέλεις σίγουρα να διαγράψεις αυτή την αναφορά εύρεσης ζώου;'
+              : 'Are you sure you want to delete this found pet report?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(isEl ? 'Ακύρωση' : 'Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(isEl ? 'Διαγραφή' : 'Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
     await _foundRepo.deleteReport(report.id);
     await _refreshScreen();
   }
@@ -1418,14 +1472,14 @@ Shared via Petbook
                     if (hasPhone) const SizedBox(width: 8),
                     if (!isOwner)
                       _ActionPillButton(
-                        label: 'Msg',
+                        label: isEl ? 'Μήνυμα' : 'Message',
                         icon: Icons.chat_bubble_outline_rounded,
                         onTap: onMessageTap,
                         color: AppTheme.primaryTeal,
                       ),
                     if (!isOwner) const SizedBox(width: 8),
                     _ActionPillButton(
-                      label: isEl ? 'Κοινοπ.' : 'Share',
+                      label: isEl ? 'Κοινοποίηση' : 'Share',
                       icon: Icons.share_outlined,
                       onTap: _shareReport,
                       color: AppTheme.textSecondary,
@@ -1684,14 +1738,14 @@ Shared via Petbook
                     if (hasPhone) const SizedBox(width: 8),
                     if (!isOwner)
                       _ActionPillButton(
-                        label: 'Msg',
+                        label: isEl ? 'Μήνυμα' : 'Message',
                         icon: Icons.chat_bubble_outline_rounded,
                         onTap: () => _messageFinder(context),
                         color: AppTheme.primaryTeal,
                       ),
                     if (!isOwner) const SizedBox(width: 8),
                     _ActionPillButton(
-                      label: isEl ? 'Κοινοπ.' : 'Share',
+                      label: isEl ? 'Κοινοποίηση' : 'Share',
                       icon: Icons.share_outlined,
                       onTap: _shareReport,
                       color: AppTheme.textSecondary,

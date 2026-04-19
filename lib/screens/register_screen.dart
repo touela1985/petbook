@@ -48,7 +48,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _loading = true);
 
-    final error = await _authService.signUpWithEmailPassword(email, password);
+    final error = await _authService.signUpWithEmailPassword(email, password, isEl: el);
 
     if (!mounted) return;
     setState(() => _loading = false);

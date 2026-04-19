@@ -8,7 +8,6 @@ import 'package:image_picker/image_picker.dart';
 import '../data/found_pet_report_repository.dart';
 import '../data/lost_pet_report_repository.dart';
 import '../services/auth_service.dart';
-import '../services/notification_service.dart';
 import '../services/profile_service.dart';
 import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
@@ -54,6 +53,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final profileData = await _profileService.load();
     final lost = await _lostRepo.getReports();
     final found = await _foundRepo.getReports();
+    final uid = FirebaseAuth.instance.currentUser?.uid;
 
     if (!mounted) return;
 
@@ -65,8 +65,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _photoBase64 = profileData.photoBase64;
       _photoUrl = profileData.photoUrl;
       _preferredContact = profileData.preferredContact;
-      _lostCount = lost.length;
-      _foundCount = found.length;
+      _lostCount = uid != null
+          ? lost.where((r) => r.userId == uid).length
+          : 0;
+      _foundCount = uid != null
+          ? found.where((r) => r.userId == uid).length
+          : 0;
     });
   }
 
@@ -585,6 +589,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     title: Text(isEl ? 'Γλώσσα εφαρμογής' : 'App language'),
                     subtitle: Text(languageLabel),
+                    trailing: const Icon(Icons.chevron_right_rounded,
+                        color: AppTheme.textSecondary),
+                    onTap: widget.onChangeLocale == null
+                        ? null
+                        : () async {
+                            Navigator.pop(context);
+                            final chosen = await showDialog<Locale?>(
+                              context: context,
+                              builder: (ctx) => SimpleDialog(
+                                title: Text(
+                                    isEl ? 'Γλώσσα εφαρμογής' : 'App language'),
+                                children: [
+                                  SimpleDialogOption(
+                                    onPressed: () =>
+                                        Navigator.pop(ctx, null),
+                                    child: Text(
+                                        isEl ? 'Αυτόματο' : 'Auto (system)'),
+                                  ),
+                                  SimpleDialogOption(
+                                    onPressed: () =>
+                                        Navigator.pop(ctx, const Locale('el')),
+                                    child: const Text('Ελληνικά'),
+                                  ),
+                                  SimpleDialogOption(
+                                    onPressed: () =>
+                                        Navigator.pop(ctx, const Locale('en')),
+                                    child: const Text('English'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (!mounted) return;
+                            // chosen == null means "auto"; the dialog itself is only
+                            // opened when onChangeLocale is non-null (guarded above).
+                            await widget.onChangeLocale!(chosen);
+                          },
                   ),
                   const SizedBox(height: 4),
                   ListTile(
@@ -618,15 +658,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _onLogoutTap(bool isEl) async {
-    await AuthService().signOut();
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(isEl ? 'Αποσύνδεση' : 'Log out'),
+        content: Text(
+          isEl
+              ? 'Θέλεις σίγουρα να αποσυνδεθείς;'
+              : 'Are you sure you want to log out?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(isEl ? 'Ακύρωση' : 'Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFC95C5C),
+              foregroundColor: Colors.white,
+            ),
+            child: Text(isEl ? 'Αποσύνδεση' : 'Log out'),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await AuthService().signOut();
+    }
   }
-
-  // ─── DEBUG — remove after notification testing ───────────────────────────
-  Future<void> _debugTestNotification() async {
-    await NotificationService.instance.debugGetAndPrintToken();
-    await NotificationService.instance.debugShowTestNotification();
-  }
-  // ─────────────────────────────────────────────────────────────────────────
 
   String _preferredContactLabel(bool isEl) {
     switch (_preferredContact) {
@@ -877,17 +937,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: () => _onLogoutTap(isEl),
               titleColor: const Color(0xFFC95C5C),
             ),
-            // ── DEBUG: remove after notification testing ─────────────────
-            const SizedBox(height: 16),
-            _profileRowCard(
-              leading: Icons.notifications_active_rounded,
-              leadingColor: Colors.orange,
-              title: '[DEBUG] Test Notification',
-              trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
-              titleColor: Colors.orange,
-              onTap: _debugTestNotification,
-            ),
-            // ─────────────────────────────────────────────────────────────
           ],
         ),
       ),

@@ -54,26 +54,26 @@ class NearbyLostPetsScreen extends StatelessWidget {
     );
   }
 
-  String? _distanceText(LostPetReport report) {
+  String? _distanceText(LostPetReport report, {required bool isEl}) {
     final meters = _distanceInMeters(report);
     if (meters == null) return null;
 
     if (meters < 1000) {
-      return '${meters.round()} m away';
+      return isEl ? '${meters.round()} μ μακριά' : '${meters.round()} m away';
     }
 
     final km = meters / 1000;
-    return '${km.toStringAsFixed(1)} km away';
+    return isEl ? '${km.toStringAsFixed(1)} χλμ μακριά' : '${km.toStringAsFixed(1)} km away';
   }
 
-  String _petName(LostPetReport report) {
+  String _petName(LostPetReport report, {required bool isEl}) {
     final name = report.petName.trim();
-    return name.isEmpty ? 'Lost pet' : name;
+    return name.isEmpty ? (isEl ? 'Χαμένο ζώο' : 'Lost pet') : name;
   }
 
-  String _typeText(LostPetReport report) {
+  String _typeText(LostPetReport report, {required bool isEl}) {
     final type = report.type.trim();
-    return type.isEmpty ? 'Pet report' : type;
+    return type.isEmpty ? (isEl ? 'Αναφορά ζώου' : 'Pet report') : type;
   }
 
   Widget _buildThumbnail(LostPetReport report) {
@@ -102,12 +102,13 @@ class NearbyLostPetsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isEl = Localizations.localeOf(context).languageCode == 'el';
     final sortedReports = _sortedReports();
 
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Nearby Lost Pets'),
+        title: Text(isEl ? 'Κοντινά χαμένα ζώα' : 'Nearby Lost Pets'),
       ),
       body: SafeArea(
         child: ListView(
@@ -154,9 +155,9 @@ class NearbyLostPetsScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Nearby Lost Alerts',
-                          style: TextStyle(
+                        Text(
+                          isEl ? 'Κοντινές ειδοποιήσεις' : 'Nearby Lost Alerts',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -164,7 +165,9 @@ class NearbyLostPetsScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${sortedReports.length} nearby report${sortedReports.length == 1 ? '' : 's'}',
+                          isEl
+                              ? '${sortedReports.length} κοντινές αναφορές'
+                              : '${sortedReports.length} nearby report${sortedReports.length == 1 ? '' : 's'}',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.95),
                             fontSize: 14,
@@ -179,7 +182,7 @@ class NearbyLostPetsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             ...sortedReports.map((report) {
-              final distanceText = _distanceText(report);
+              final distanceText = _distanceText(report, isEl: isEl);
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 14),
@@ -301,7 +304,7 @@ class NearbyLostPetsScreen extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      _petName(report),
+                                      _petName(report, isEl: isEl),
                                       style: const TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.w800,
@@ -310,7 +313,7 @@ class NearbyLostPetsScreen extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      _typeText(report),
+                                      _typeText(report, isEl: isEl),
                                       style: const TextStyle(
                                         color: AppTheme.textSecondary,
                                         fontWeight: FontWeight.w500,
@@ -357,19 +360,19 @@ class NearbyLostPetsScreen extends StatelessWidget {
                               color: AppTheme.primaryTeal.withOpacity(0.08),
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: const Row(
+                            child: Row(
                               children: [
                                 Expanded(
                                   child: Text(
-                                    'Open alert details',
-                                    style: TextStyle(
+                                    isEl ? 'Άνοιγμα ειδοποίησης' : 'Open alert details',
+                                    style: const TextStyle(
                                       color: AppTheme.primaryTeal,
                                       fontWeight: FontWeight.w700,
                                       fontSize: 13,
                                     ),
                                   ),
                                 ),
-                                Icon(
+                                const Icon(
                                   Icons.arrow_forward_rounded,
                                   size: 18,
                                   color: AppTheme.primaryTeal,

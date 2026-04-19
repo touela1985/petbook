@@ -8,7 +8,8 @@ import '../l10n/app_localizations.dart';
 import '../models/pet.dart';
 import '../models/pet_health_event.dart';
 import '../screens/add_health_event_screen.dart';
-import '../screens/edit_pet_screen.dart';
+import '../screens/add_pet_screen.dart';
+import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/pet_image_widget.dart';
 
@@ -111,24 +112,26 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
     );
 
     if (confirm == true) {
+      await NotificationService.instance.cancelHealthReminder(event.id);
       await _healthRepository.deleteEvent(event.id);
       await _loadHealthEvents();
     }
   }
 
   Future<void> _openEditPetScreen(Pet pet) async {
-    await Navigator.push<bool>(
+    final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => EditPetScreen(
+        builder: (_) => AddPetScreen(
           repo: widget.repo,
-          petId: pet.id,
+          petToEdit: pet,
         ),
       ),
     );
 
-    if (!mounted) return;
-    Navigator.pop(context, true);
+    if (result == true && mounted) {
+      Navigator.pop(context, true);
+    }
   }
 
   Future<void> _deletePet(Pet pet) async {

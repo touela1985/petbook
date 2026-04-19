@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 
 import '../data/found_pet_report_repository.dart';
 import '../models/found_pet_report.dart';
+import '../services/profile_service.dart';
 import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
 import 'pick_location_screen.dart';
@@ -54,6 +55,18 @@ class _AddFoundPetReportScreenState extends State<AddFoundPetReportScreen> {
       _selectedDate = report.foundDate;
       _selectedLatitude = report.latitude;
       _selectedLongitude = report.longitude;
+    } else {
+      _prefillFromProfile();
+    }
+  }
+
+  Future<void> _prefillFromProfile() async {
+    final data = await ProfileService().load();
+    if (!mounted) return;
+    if (data.phone.trim().isNotEmpty) {
+      setState(() {
+        _phoneController.text = data.phone.trim();
+      });
     }
   }
 

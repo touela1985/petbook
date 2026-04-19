@@ -388,6 +388,7 @@ Shared via Petbook
         longitude: _report.longitude,
         createdAt: _report.createdAt,
         sightings: updatedEmbedded,
+        userId: _report.userId,
       );
       await _reportRepository.updateReport(updatedReport);
       if (!mounted) return;
@@ -457,6 +458,7 @@ Shared via Petbook
       longitude: _report.longitude,
       createdAt: _report.createdAt,
       sightings: _report.sightings,
+      userId: _report.userId,
     );
 
     await _reportRepository.updateReport(updatedReport);

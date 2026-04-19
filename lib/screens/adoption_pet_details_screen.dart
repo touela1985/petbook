@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/adoption_pet.dart';
 import '../theme/app_theme.dart';
@@ -14,6 +16,33 @@ class AdoptionPetDetailsScreen extends StatelessWidget {
 
   bool _isEl(BuildContext context) {
     return Localizations.localeOf(context).languageCode == 'el';
+  }
+
+  Future<void> _callOwner(BuildContext context) async {
+    final phone = pet.contactPhone.trim();
+    if (phone.isEmpty) return;
+    final uri = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  Future<void> _share(BuildContext context) async {
+    final isEl = _isEl(context);
+    final name = pet.name.trim().isEmpty
+        ? (isEl ? 'Ζώο προς υιοθεσία' : 'Pet for adoption')
+        : pet.name;
+    final parts = <String>[
+      isEl ? '🐾 Υιοθεσία: $name' : '🐾 Adoption: $name',
+      if (pet.type.trim().isNotEmpty) pet.type,
+      if (pet.age.trim().isNotEmpty)
+        (isEl ? 'Ηλικία: ${pet.age}' : 'Age: ${pet.age}'),
+      if (pet.location.trim().isNotEmpty)
+        (isEl ? 'Τοποθεσία: ${pet.location}' : 'Location: ${pet.location}'),
+      if (pet.contactPhone.trim().isNotEmpty)
+        (isEl ? 'Τηλ: ${pet.contactPhone}' : 'Tel: ${pet.contactPhone}'),
+    ];
+    await Share.share(parts.join('\n'));
   }
 
   void _openFullImage(BuildContext context) {
@@ -199,6 +228,30 @@ class AdoptionPetDetailsScreen extends StatelessWidget {
                     color: AppTheme.textPrimary,
                   ),
                 ),
+                if (pet.adopted) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: Colors.green.withOpacity(0.35),
+                      ),
+                    ),
+                    child: Text(
+                      isEl ? '✓ Υιοθετήθηκε' : '✓ Adopted',
+                      style: const TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
@@ -256,15 +309,73 @@ class AdoptionPetDetailsScreen extends StatelessWidget {
                 const SizedBox(height: 22),
                 _sectionTitle(isEl ? 'Επικοινωνία' : 'Contact'),
                 const SizedBox(height: 8),
-                Text(
-                  pet.contactPhone.trim().isEmpty
-                      ? (isEl ? 'Δεν υπάρχει τηλέφωνο' : 'No phone provided')
-                      : pet.contactPhone,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.primaryTeal,
+                if (pet.contactPhone.trim().isEmpty)
+                  Text(
+                    isEl ? 'Δεν υπάρχει τηλέφωνο' : 'No phone provided',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: AppTheme.textSecondary,
+                    ),
+                  )
+                else
+                  GestureDetector(
+                    onTap: () => _callOwner(context),
+                    child: Text(
+                      pet.contactPhone.trim(),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.primaryTeal,
+                        decoration: TextDecoration.underline,
+                        decorationColor: AppTheme.primaryTeal,
+                      ),
+                    ),
                   ),
+                const SizedBox(height: 22),
+                Row(
+                  children: [
+                    if (pet.contactPhone.trim().isNotEmpty) ...[
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _callOwner(context),
+                          icon: const Icon(Icons.call_rounded, size: 18),
+                          label: Text(isEl ? 'Κλήση' : 'Call'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.green,
+                            side: const BorderSide(color: Colors.green),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            textStyle: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                    ],
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _share(context),
+                        icon: const Icon(Icons.share_outlined, size: 18),
+                        label: Text(isEl ? 'Κοινοποίηση' : 'Share'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.textSecondary,
+                          side: const BorderSide(color: AppTheme.border),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          textStyle: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

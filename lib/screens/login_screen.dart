@@ -39,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _loading = true);
 
-    final error = await _authService.signInWithEmailPassword(email, password);
+    final error = await _authService.signInWithEmailPassword(email, password, isEl: _isEl);
 
     if (!mounted) return;
     setState(() => _loading = false);
@@ -48,6 +48,59 @@ class _LoginScreenState extends State<LoginScreen> {
       _showError(error);
     }
     // Αν επιτυχία, το AuthWrapper αντιδρά αυτόματα μέσω authStateChanges.
+  }
+
+  Future<void> _forgotPassword() async {
+    final el = _isEl;
+    final emailCtrl = TextEditingController(text: _emailCtrl.text.trim());
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(el ? 'Επαναφορά κωδικού' : 'Reset password'),
+        content: TextField(
+          controller: emailCtrl,
+          keyboardType: TextInputType.emailAddress,
+          decoration: InputDecoration(
+            labelText: 'Email',
+            hintText: el ? 'Εισήγαγε το email σου' : 'Enter your email',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(el ? 'Ακύρωση' : 'Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(el ? 'Αποστολή' : 'Send'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+    final email = emailCtrl.text.trim();
+    if (email.isEmpty) return;
+
+    final error = await _authService.sendPasswordResetEmail(email, isEl: el);
+    if (!mounted) return;
+
+    if (error != null) {
+      _showError(error);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            el
+                ? 'Εστάλη email επαναφοράς κωδικού.'
+                : 'Password reset email sent.',
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
   }
 
   void _showError(String message) {
@@ -120,7 +173,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _forgotPassword,
+                    child: Text(
+                      el ? 'Ξέχασες τον κωδικό;' : 'Forgot password?',
+                      style: const TextStyle(color: AppTheme.primaryTeal),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(

@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../data/lost_pet_message_repository.dart';
 import '../models/lost_pet_message.dart';
 import '../models/lost_pet_report.dart';
+import '../services/profile_service.dart';
 import '../theme/app_theme.dart';
 
 class SendLostPetMessageScreen extends StatefulWidget {
@@ -22,6 +23,7 @@ class SendLostPetMessageScreen extends StatefulWidget {
 
 class _SendLostPetMessageScreenState extends State<SendLostPetMessageScreen> {
   final LostPetMessageRepository _repo = LostPetMessageRepository();
+  final ProfileService _profileService = ProfileService();
   final TextEditingController _messageController = TextEditingController();
   final Uuid _uuid = const Uuid();
 
@@ -81,10 +83,15 @@ class _SendLostPetMessageScreenState extends State<SendLostPetMessageScreen> {
 
     setState(() => _isSaving = true);
 
+    final profileData = await _profileService.load();
+    final senderName = profileData.name.trim().isNotEmpty
+        ? profileData.name.trim()
+        : (_isEl ? 'Ανώνυμος' : 'Anonymous');
+
     final message = LostPetMessage(
       id: _uuid.v4(),
       reportId: widget.report.id,
-      senderName: currentUser.email ?? currentUser.uid,
+      senderName: senderName,
       senderUserId: currentUser.uid,
       receiverUserId: receiverUserId,
       message: messageText,

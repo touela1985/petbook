@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // User profiles — only the owner can read or write their own document.
+    // This protects phone, email, fcmToken from other authenticated users.
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Pets — only the owning user can access their own pets.
+    // pet_repository.dart always queries with where('userId', isEqualTo: uid),
+    // so this rule is consistent with every existing query.
+    match /pets/{petId} {
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // Lost reports — all authenticated users can read (needed for
+    // lost/found screen, nearby screen, home screen banner).
+    // Only the owner can create, update, or delete their report.
+    match /lost_reports/{reportId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // Found reports — same pattern as lost_reports.
+    match /found_reports/{reportId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // Adoption pets — same pattern as lost_reports.
+    match /adoption_pets/{petId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // Lost sightings — all authenticated users can read and create
+    // (community sighting submission flow).
+    // Only the original submitter can update or delete their sighting.
+    match /lost_sightings/{sightingId} {
+      allow read, create: if request.auth != null;
+      allow update, delete: if request.auth != null
+        && resource.data.submittedByUserId == request.auth.uid;
+    }
+
+    // Lost pet messages — only the sender or the receiver may read,
+    // update, or delete. Only the sender may create.
+    // The app queries via two separate single-field where-clauses
+    // (senderUserId and receiverUserId) which both satisfy this rule.
+    match /lost_pet_messages/{msgId} {
+      allow read, update, delete: if request.auth != null
+        && (resource.data.senderUserId == request.auth.uid
+            || resource.data.receiverUserId == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.senderUserId == request.auth.uid;
+    }
+
+    // Found pet messages — sender, receiver, or report owner may access.
+    // In the current app, receiverUserId == reportOwnerUserId on every write,
+    // but both fields are checked to preserve existing data safely.
+    // App queries via senderUserId and receiverUserId where-clauses.
+    match /found_pet_messages/{msgId} {
+      allow read, update, delete: if request.auth != null
+        && (resource.data.senderUserId == request.auth.uid
+            || resource.data.receiverUserId == request.auth.uid
+            || resource.data.reportOwnerUserId == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.senderUserId == request.auth.uid;
+    }
+  }
+}

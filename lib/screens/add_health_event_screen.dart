@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 
 import '../data/pet_health_repository.dart';
 import '../models/pet_health_event.dart';
+import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 
 class AddHealthEventScreen extends StatefulWidget {
@@ -418,10 +419,12 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
     );
 
     if (_isEditMode) {
+      await NotificationService.instance.cancelHealthReminder(event.id);
       await _repo.updateEvent(event);
     } else {
       await _repo.addEvent(event);
     }
+    await NotificationService.instance.scheduleHealthReminder(event);
 
     if (!mounted) return;
     Navigator.pop(context, true);

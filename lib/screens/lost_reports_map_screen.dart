@@ -28,10 +28,11 @@ class LostReportsMapScreen extends StatelessWidget {
     return const LatLng(36.8920, 27.2878);
   }
 
-  Set<Marker> _buildMarkers(BuildContext context) {
+  Set<Marker> _buildMarkers(BuildContext context, {required bool isEl}) {
     return _reportsWithLocation.map((report) {
-      final petName =
-          report.petName.trim().isEmpty ? 'Lost pet' : report.petName.trim();
+      final petName = report.petName.trim().isEmpty
+          ? (isEl ? 'Χαμένο ζώο' : 'Lost pet')
+          : report.petName.trim();
 
       return Marker(
         markerId: MarkerId(report.id),
@@ -54,12 +55,13 @@ class LostReportsMapScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isEl = Localizations.localeOf(context).languageCode == 'el';
     final reportsWithLocation = _reportsWithLocation;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Lost Pets Map'),
+        title: Text(isEl ? 'Χάρτης χαμένων ζώων' : 'Lost Pets Map'),
       ),
       body: reportsWithLocation.isEmpty
           ? Center(
@@ -71,9 +73,11 @@ class LostReportsMapScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppTheme.border),
                 ),
-                child: const Text(
-                  'No lost reports with location yet.',
-                  style: TextStyle(
+                child: Text(
+                  isEl
+                      ? 'Δεν υπάρχουν αναφορές με τοποθεσία ακόμα.'
+                      : 'No lost reports with location yet.',
+                  style: const TextStyle(
                     color: AppTheme.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
@@ -87,7 +91,7 @@ class LostReportsMapScreen extends StatelessWidget {
                     target: _initialTarget,
                     zoom: 13,
                   ),
-                  markers: _buildMarkers(context),
+                  markers: _buildMarkers(context, isEl: isEl),
                   myLocationEnabled: true,
                   myLocationButtonEnabled: true,
                   zoomControlsEnabled: false,
@@ -110,7 +114,9 @@ class LostReportsMapScreen extends StatelessWidget {
                       ],
                     ),
                     child: Text(
-                      '${reportsWithLocation.length} active lost pin${reportsWithLocation.length == 1 ? '' : 's'}',
+                      isEl
+                          ? '${reportsWithLocation.length} ενεργ${reportsWithLocation.length == 1 ? 'ή' : 'ές'} αναφορ${reportsWithLocation.length == 1 ? 'ά' : 'ές'}'
+                          : '${reportsWithLocation.length} active lost pin${reportsWithLocation.length == 1 ? '' : 's'}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w800,
                         color: AppTheme.textPrimary,
