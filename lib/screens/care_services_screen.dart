@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-// ── Design tokens (from README) ───────────────────────────────
+// ── Design tokens ─────────────────────────────────────────────
 const _teal = Color(0xFF2E7D78);
 const _tealXLight = Color(0xFFE0F5F3);
 const _screenBg = Color(0xFFF4F6F5);
@@ -80,31 +80,58 @@ class _CareServicesScreenState extends State<CareServicesScreen> {
   _Cat? _activeCategory;
   GoogleMapController? _mapController;
 
+  // Map renders only after the first frame to avoid PlatformView
+  // initialization conflicts when the screen is first inserted as a tab.
+  bool _mapReady = false;
+  bool _locationGranted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() => _mapReady = true);
+      }
+    });
+    _checkLocationPermission();
+  }
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkLocationPermission() async {
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      final granted = permission == LocationPermission.always ||
+          permission == LocationPermission.whileInUse;
+      if (mounted) {
+        setState(() => _locationGranted = granted);
+      }
+    } catch (_) {}
+  }
+
   void _onMapCreated(GoogleMapController controller) {
     _mapController = controller;
     _moveToUserLocation();
   }
 
   Future<void> _moveToUserLocation() async {
+    if (!_locationGranted) return;
     try {
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        return;
-      }
-
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        return;
-      }
-
+      if (!serviceEnabled) return;
       final pos = await Geolocator.getCurrentPosition();
-      _mapController?.animateCamera(
-        CameraUpdate.newLatLng(LatLng(pos.latitude, pos.longitude)),
-      );
+      if (mounted) {
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLng(LatLng(pos.latitude, pos.longitude)),
+        );
+      }
     } catch (_) {}
   }
 
@@ -116,9 +143,11 @@ class _CareServicesScreenState extends State<CareServicesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _screenBg,
-      body: SafeArea(
+    // No nested Scaffold — use Material so InkWell/GestureDetector work,
+    // background handled by outer Scaffold via this widget's color.
+    return Material(
+      color: _screenBg,
+      child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: 40),
           child: Column(
@@ -249,7 +278,6 @@ class _CareServicesScreenState extends State<CareServicesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Icon badge
               Container(
                 width: 52,
                 height: 52,
@@ -266,7 +294,6 @@ class _CareServicesScreenState extends State<CareServicesScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              // Card title
               Text(
                 card.title,
                 style: TextStyle(
@@ -278,7 +305,6 @@ class _CareServicesScreenState extends State<CareServicesScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-              // Card subtitle
               Text(
                 card.subtitle,
                 style: TextStyle(
@@ -308,7 +334,6 @@ class _CareServicesScreenState extends State<CareServicesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section label + optional filter badge
           Row(
             children: [
               const Text(
@@ -342,10 +367,10 @@ class _CareServicesScreenState extends State<CareServicesScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          // Map container
           Container(
             height: 192,
             decoration: BoxDecoration(
+              color: const Color(0xFFE8F5F3),
               borderRadius: BorderRadius.circular(22),
               border: Border.all(
                 color: const Color(0xFF2E7D78).withValues(alpha: 0.10),
@@ -363,19 +388,27 @@ class _CareServicesScreenState extends State<CareServicesScreen> {
               borderRadius: BorderRadius.circular(22),
               child: Stack(
                 children: [
-                  // Real Google Map
-                  GoogleMap(
-                    initialCameraPosition: const CameraPosition(
-                      target: _defaultLocation,
-                      zoom: 14,
+                  // Real Google Map — deferred until after first frame
+                  if (_mapReady)
+                    GoogleMap(
+                      initialCameraPosition: const CameraPosition(
+                        target: _defaultLocation,
+                        zoom: 14,
+                      ),
+                      onMapCreated: _onMapCreated,
+                      myLocationEnabled: _locationGranted,
+                      myLocationButtonEnabled: false,
+                      zoomControlsEnabled: false,
+                      mapToolbarEnabled: false,
+                    )
+                  else
+                    const Center(
+                      child: CircularProgressIndicator(
+                        color: _teal,
+                        strokeWidth: 2,
+                      ),
                     ),
-                    onMapCreated: _onMapCreated,
-                    myLocationEnabled: true,
-                    myLocationButtonEnabled: false,
-                    zoomControlsEnabled: false,
-                    mapToolbarEnabled: false,
-                  ),
-                  // Search bar overlay (visual-only, per README spec)
+                  // Search bar overlay
                   Positioned(
                     top: 12,
                     left: 12,

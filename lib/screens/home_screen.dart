@@ -17,6 +17,7 @@ import 'lost_pet_report_details_screen.dart';
 import 'pet_profile_screen.dart';
 import 'reminders_screen.dart';
 import 'lost_reports_map_screen.dart';
+import 'care_services_screen.dart';
 import '../data/pet_health_repository.dart';
 import '../models/pet_health_event.dart';
 
@@ -1104,7 +1105,9 @@ class _CareServicesCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        onTap: null,
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const CareServicesScreen()),
+        ),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(

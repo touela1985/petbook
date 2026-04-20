@@ -113,7 +113,7 @@ class _MainNavigationState extends State<MainNavigation> {
         },
         backgroundColor: Colors.white,
         indicatorColor: AppTheme.primaryTeal.withAlpha(30),
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
         destinations: [
           NavigationDestination(
             icon: const Icon(Icons.home_outlined),
