@@ -7,6 +7,7 @@ import '../data/lost_pet_report_repository.dart';
 import '../data/pet_repository.dart';
 import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
+import 'care_services_screen.dart';
 import 'community_screen.dart';
 import 'home_screen.dart';
 import 'lost_found_screen.dart';
@@ -94,6 +95,7 @@ class _MainNavigationState extends State<MainNavigation> {
       const CommunityScreen(),
       ViewPetsScreen(repo: widget.repo),
       const LostFoundScreen(),
+      const CareServicesScreen(),
       ProfileScreen(
         onChangeLocale: widget.onChangeLocale,
         currentLocale: widget.currentLocale,
@@ -132,6 +134,11 @@ class _MainNavigationState extends State<MainNavigation> {
             icon: const Icon(Icons.search_outlined),
             selectedIcon: const Icon(Icons.search_rounded),
             label: isEl ? 'Αναζητήσεις' : 'Reports',
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.medical_services_outlined),
+            selectedIcon: const Icon(Icons.medical_services_rounded),
+            label: isEl ? 'Υπηρεσίες' : 'Services',
           ),
           NavigationDestination(
             icon: const Icon(Icons.person_outline_rounded),
