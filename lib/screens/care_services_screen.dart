@@ -25,7 +25,7 @@ const _kosInitialCamera = CameraPosition(
 );
 
 // ── Category enum ─────────────────────────────────────────────
-enum _Cat { vet, groom, shop, walk }
+enum _Cat { vet, groom, shop }
 
 // ── Card display data ─────────────────────────────────────────
 class _CardData {
@@ -70,14 +70,6 @@ const _cards = [
     iconBg: Color(0xFFF0EEFF),
     accent: Color(0xFF7B6FD4),
     icon: Icons.store_outlined,
-  ),
-  _CardData(
-    key: _Cat.walk,
-    title: 'Sitting & Walking',
-    subtitle: 'Trusted local pet sitters',
-    iconBg: Color(0xFFFFF5E6),
-    accent: Color(0xFFF0A044),
-    icon: Icons.pets_outlined,
   ),
 ];
 
@@ -180,27 +172,6 @@ const _mockServices = <_ServiceItem>[
     url: 'https://maps.app.goo.gl/AnimalSuppliesAntimachia',
   ),
 
-  // ── Sitting & Walking ──────────────────────────────────────
-  // Kos Town
-  _ServiceItem(
-    id: 'w1', name: 'Kos Pet Sitting',
-    category: _Cat.walk, lat: 36.8916, lng: 27.2858,
-    address: 'Κως πόλη', phone: '+30 698 445 5667',
-    url: 'https://maps.app.goo.gl/KosPetSitting',
-  ),
-  // Kardamena
-  _ServiceItem(
-    id: 'w2', name: 'Happy Dogs Καρδάμαινα',
-    category: _Cat.walk, lat: 36.7791, lng: 27.1298,
-    address: 'Καρδάμαινα, Κως', phone: '+30 697 556 6778',
-  ),
-  // Kefalos
-  _ServiceItem(
-    id: 'w3', name: 'Island Pet Care Κεφάλου',
-    category: _Cat.walk, lat: 36.7341, lng: 26.9587,
-    address: 'Κεφάλος, Κως', phone: '+30 698 667 7889',
-    url: 'https://maps.app.goo.gl/IslandPetCare',
-  ),
 ];
 
 // ── Marker hue per category ───────────────────────────────────
@@ -209,7 +180,6 @@ double _markerHue(_Cat cat) {
     case _Cat.vet:   return 160.0; // teal-cyan
     case _Cat.groom: return 10.0;  // coral-orange
     case _Cat.shop:  return 270.0; // lavender-violet
-    case _Cat.walk:  return 45.0;  // amber-yellow
   }
 }
 
@@ -227,9 +197,13 @@ class _CareServicesScreenState extends State<CareServicesScreen> {
   bool _mapReady = false;
   bool _locationGranted = false;
 
+  // Cached — rebuilt only when filter changes, not on every frame.
+  late Set<Marker> _markers;
+
   @override
   void initState() {
     super.initState();
+    _markers = _buildMarkers();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) setState(() => _mapReady = true);
     });
@@ -299,7 +273,11 @@ class _CareServicesScreenState extends State<CareServicesScreen> {
   // ── Category toggle ────────────────────────────────────────
   void _selectCategory(_Cat cat) {
     final next = _activeCategory == cat ? null : cat;
-    setState(() => _activeCategory = next);
+    if (next == _activeCategory) return;
+    setState(() {
+      _activeCategory = next;
+      _markers = _buildMarkers();
+    });
     if (next != null) _animateCameraToCategory(next);
   }
 
@@ -486,7 +464,7 @@ class _CareServicesScreenState extends State<CareServicesScreen> {
     );
   }
 
-  // ── 2×2 category grid ──────────────────────────────────────
+  // ── Category grid: 2 top + 1 full-width bottom ─────────────
   Widget _buildGrid() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
@@ -498,11 +476,7 @@ class _CareServicesScreenState extends State<CareServicesScreen> {
             Expanded(child: _buildCard(_cards[1])),
           ]),
           const SizedBox(height: 12),
-          Row(children: [
-            Expanded(child: _buildCard(_cards[2])),
-            const SizedBox(width: 12),
-            Expanded(child: _buildCard(_cards[3])),
-          ]),
+          _buildCard(_cards[2]),
         ],
       ),
     );
@@ -655,14 +629,17 @@ class _CareServicesScreenState extends State<CareServicesScreen> {
                     GoogleMap(
                       initialCameraPosition: _kosInitialCamera,
                       onMapCreated: _onMapCreated,
-                      markers: _buildMarkers(),
+                      markers: _markers,
                       myLocationEnabled: _locationGranted,
-                      myLocationButtonEnabled: false,
+                      myLocationButtonEnabled: _locationGranted,
                       zoomControlsEnabled: false,
+                      compassEnabled: false,
                       mapToolbarEnabled: false,
-                      // Restrict camera to Kos island — user cannot pan outside
+                      zoomGesturesEnabled: true,
+                      scrollGesturesEnabled: true,
+                      rotateGesturesEnabled: false,
+                      tiltGesturesEnabled: false,
                       cameraTargetBounds: CameraTargetBounds(_kosBounds),
-                      // Prevent zooming out so far that other cities become visible
                       minMaxZoomPreference: const MinMaxZoomPreference(9.0, 20.0),
                     )
                   else
@@ -987,7 +964,6 @@ class _SearchSheetState extends State<_SearchSheet> {
       case _Cat.vet:   return 'Veterinarians';
       case _Cat.groom: return 'Grooming';
       case _Cat.shop:  return 'Pet Shops';
-      case _Cat.walk:  return 'Sitting & Walking';
     }
   }
 
