@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -641,6 +643,13 @@ class _CareServicesScreenState extends State<CareServicesScreen> {
                       tiltGesturesEnabled: false,
                       cameraTargetBounds: CameraTargetBounds(_kosBounds),
                       minMaxZoomPreference: const MinMaxZoomPreference(9.0, 20.0),
+                      // Claim all gestures eagerly so the parent ScrollView
+                      // does not steal pan/pinch-zoom from the map.
+                      gestureRecognizers: {
+                        Factory<EagerGestureRecognizer>(
+                          EagerGestureRecognizer.new,
+                        ),
+                      },
                     )
                   else
                     const Center(
