@@ -93,85 +93,67 @@ class _ServiceItem {
     required this.lat,
     required this.lng,
     this.address,
+    // ignore: unused_element_parameter
     this.phone,
+    // ignore: unused_element_parameter
     this.url,
   });
 }
 
-// ── Real services — Kos island, Greece ───────────────────────
-// Services spread across the WHOLE island:
-//   Kos Town (east) · Marmari · Tigaki · Mastichari · Antimachia · Kardamena · Kefalos (west)
+// ── DEV PLACEHOLDERS — Kos island, Greece ────────────────────
+// ⚠️  SAMPLE DATA ONLY — not verified real businesses.
+// Replace with manually entered, verified real entries before release.
+// Coordinates verified via Google Maps (long-press method), confirmed on land.
+// No fake phone numbers or website URLs are stored.
+// "Open in Maps" uses: https://www.google.com/maps/search/?api=1&query=LAT,LNG
 const _mockServices = <_ServiceItem>[
 
   // ── Veterinarians ──────────────────────────────────────────
-  // Kos Town (main practice)
+  // Kos Town centre — verified via Google Maps, confirmed on land
+  // Source: google.com/maps @36.8836608,27.2891904
   _ServiceItem(
-    id: 'v1', name: 'Κτηνιατρικό Κέντρο Κω',
-    category: _Cat.vet, lat: 36.8924, lng: 27.2881,
-    address: 'Απελλού 14, Κως πόλη', phone: '+30 22420 28890',
-    url: 'https://maps.app.goo.gl/KosVetClinic',
+    id: 'v1', name: 'Κτηνιατρείο Κως [Sample]',
+    category: _Cat.vet, lat: 36.8837, lng: 27.2892,
+    address: 'Κως πόλη',
   ),
-  // Kos Town (second clinic)
+  // Kefalos village centre — verified via Google Maps, confirmed on land
+  // Source: google.com/maps 3d36.7445146!4d26.9591755
   _ServiceItem(
-    id: 'v2', name: 'Ιατρείο Ζώων Σαρρής',
-    category: _Cat.vet, lat: 36.8898, lng: 27.2843,
-    address: 'Ρήγα Φεραίου 7, Κως πόλη', phone: '+30 22420 26340',
-  ),
-  // Kardamena (south coast, central island)
-  _ServiceItem(
-    id: 'v3', name: 'Vetcare Καρδάμαινα',
-    category: _Cat.vet, lat: 36.7803, lng: 27.1325,
-    address: 'Καρδάμαινα, Κως', phone: '+30 22420 91240',
-    url: 'https://maps.app.goo.gl/VetcareKardamena',
-  ),
-  // Kefalos (far west)
-  _ServiceItem(
-    id: 'v4', name: 'Animal Clinic Κεφάλου',
-    category: _Cat.vet, lat: 36.7328, lng: 26.9611,
-    address: 'Κεφάλος, Κως', phone: '+30 22420 71380',
+    id: 'v2', name: 'Κτηνιατρείο Κεφάλου [Sample]',
+    category: _Cat.vet, lat: 36.7445, lng: 26.9592,
+    address: 'Κεφάλος',
   ),
 
   // ── Grooming ───────────────────────────────────────────────
-  // Kos Town
+  // Kos Town centre — verified via Google Maps, confirmed on land
+  // Source: google.com/maps @36.8836608,27.2891904
   _ServiceItem(
-    id: 'g1', name: 'Dog Salon Κω',
-    category: _Cat.groom, lat: 36.8929, lng: 27.2875,
-    address: 'Απελλού 31, Κως πόλη', phone: '+30 697 112 2334',
+    id: 'g1', name: 'Grooming Κως πόλη [Sample]',
+    category: _Cat.groom, lat: 36.8837, lng: 27.2892,
+    address: 'Κως πόλη',
   ),
-  // Tigaki (north coast, central)
+  // Antimachia village centre — verified via Google Maps, confirmed on land
+  // Source: google.com/maps 3d36.8092579!4d27.0981016
   _ServiceItem(
-    id: 'g2', name: 'Fur & Style Τιγκάκι',
-    category: _Cat.groom, lat: 36.8812, lng: 27.0912,
-    address: 'Τιγκάκι, Κως', phone: '+30 698 223 3445',
-    url: 'https://maps.app.goo.gl/FurStyleTigaki',
-  ),
-  // Mastichari (north coast, west-central)
-  _ServiceItem(
-    id: 'g3', name: 'Paw Studio Μαστιχάρι',
-    category: _Cat.groom, lat: 36.8598, lng: 27.0501,
-    address: 'Μαστιχάρι, Κως', phone: '+30 697 334 4556',
+    id: 'g2', name: 'Grooming Κεντρική Κως [Sample]',
+    category: _Cat.groom, lat: 36.8093, lng: 27.0981,
+    address: 'Αντιμάχεια',
   ),
 
   // ── Pet Shops ──────────────────────────────────────────────
-  // Kos Town
+  // Kos Town centre — verified via Google Maps, confirmed on land
+  // Source: google.com/maps @36.8836608,27.2891904
   _ServiceItem(
-    id: 's1', name: 'Pet House Κω',
-    category: _Cat.shop, lat: 36.8937, lng: 27.2897,
-    address: 'Ελ. Βενιζέλου 5, Κως πόλη', phone: '+30 22420 25670',
-    url: 'https://maps.app.goo.gl/PetHouseKos',
+    id: 's1', name: 'Pet Shop Κως πόλη [Sample]',
+    category: _Cat.shop, lat: 36.8837, lng: 27.2892,
+    address: 'Κως πόλη',
   ),
-  // Marmari (north coast, east-central)
+  // Antimachia village centre — verified via Google Maps, confirmed on land
+  // Source: google.com/maps 3d36.8092579!4d27.0981016
   _ServiceItem(
-    id: 's2', name: 'Zooland Μαρμάρι',
-    category: _Cat.shop, lat: 36.8821, lng: 27.1712,
-    address: 'Μαρμάρι, Κως', phone: '+30 22420 42810',
-  ),
-  // Antimachia (island center)
-  _ServiceItem(
-    id: 's3', name: 'Animal Supplies Αντιμάχεια',
-    category: _Cat.shop, lat: 36.8312, lng: 27.0701,
-    address: 'Αντιμάχεια, Κως', phone: '+30 22420 69130',
-    url: 'https://maps.app.goo.gl/AnimalSuppliesAntimachia',
+    id: 's2', name: 'Pet Shop Κεντρική Κως [Sample]',
+    category: _Cat.shop, lat: 36.8093, lng: 27.0981,
+    address: 'Αντιμάχεια',
   ),
 
 ];
@@ -324,6 +306,7 @@ class _CareServicesScreenState extends State<CareServicesScreen> {
     final card = _cards.firstWhere((c) => c.key == service.category);
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _ServiceSheet(
         service: service,
@@ -752,7 +735,9 @@ class _ServiceSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SafeArea(
+      top: false,
+      child: Container(
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -777,7 +762,7 @@ class _ServiceSheet extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -869,11 +854,17 @@ class _ServiceSheet extends StatelessWidget {
                     flex: service.phone != null ? 1 : 2,
                     child: _ActionBtn(
                       label: service.url != null
-                          ? 'Open Website' : 'No Website',
-                      icon: Icons.open_in_new_rounded,
+                          ? 'Open Website' : 'Open in Maps',
+                      icon: service.url != null
+                          ? Icons.open_in_new_rounded
+                          : Icons.map_outlined,
                       color: card.accent,
                       filled: true,
-                      onTap: () => onOpenUrl(service.url),
+                      onTap: () => onOpenUrl(
+                        service.url ??
+                        'https://www.google.com/maps/search/?api=1'
+                        '&query=${service.lat},${service.lng}',
+                      ),
                     ),
                   ),
                 ]),
@@ -881,6 +872,7 @@ class _ServiceSheet extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }
