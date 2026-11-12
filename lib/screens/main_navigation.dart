@@ -33,6 +33,9 @@ class MainNavigation extends StatefulWidget {
 }
 
 class _MainNavigationState extends State<MainNavigation> {
+  /// Community tab is temporarily hidden. Set to true to show it again.
+  static const bool _showCommunity = false;
+
   int _index = 0;
 
   StreamSubscription<Map<String, String>>? _notificationSub;
@@ -92,7 +95,7 @@ class _MainNavigationState extends State<MainNavigation> {
         onChangeLocale: widget.onChangeLocale,
         currentLocale: widget.currentLocale,
       ),
-      const CommunityScreen(),
+      if (_showCommunity) const CommunityScreen(),
       ViewPetsScreen(repo: widget.repo),
       const LostFoundScreen(),
       const CareServicesScreen(),
@@ -120,11 +123,12 @@ class _MainNavigationState extends State<MainNavigation> {
             selectedIcon: const Icon(Icons.home_rounded),
             label: isEl ? 'Αρχική' : 'Home',
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.groups_outlined),
-            selectedIcon: const Icon(Icons.groups_rounded),
-            label: isEl ? 'Κοινότητα' : 'Community',
-          ),
+          if (_showCommunity)
+            NavigationDestination(
+              icon: const Icon(Icons.groups_outlined),
+              selectedIcon: const Icon(Icons.groups_rounded),
+              label: isEl ? 'Κοινότητα' : 'Community',
+            ),
           NavigationDestination(
             icon: const Icon(Icons.pets_outlined),
             selectedIcon: const Icon(Icons.pets),

@@ -428,7 +428,8 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
       } else {
         await _repo.addEvent(event);
       }
-      await NotificationService.instance.scheduleHealthReminder(event);
+      await NotificationService.instance
+          .scheduleHealthReminder(event, isEl: isEl);
 
       if (!mounted) return;
       Navigator.pop(context, true);

@@ -216,18 +216,40 @@ class NotificationService {
 
   // ─── Health reminder scheduling ───────────────────────────────────────────
 
-  Future<void> scheduleHealthReminder(PetHealthEvent event) async {
+  Future<void> scheduleHealthReminder(
+    PetHealthEvent event, {
+    bool isEl = false,
+  }) async {
     final reminderDate = event.reminderDate;
     if (reminderDate == null) return;
-    if (reminderDate.isBefore(DateTime.now())) return;
 
-    final scheduledDate = tz.TZDateTime.from(reminderDate, tz.local);
+    // Fire at 09:00 local time on the chosen day (stored date is unchanged).
+    final now = DateTime.now();
+    var fireAt = DateTime(
+      reminderDate.year,
+      reminderDate.month,
+      reminderDate.day,
+      9,
+    );
+    if (fireAt.isBefore(now)) {
+      final today = DateTime(now.year, now.month, now.day);
+      final chosenDay =
+          DateTime(reminderDate.year, reminderDate.month, reminderDate.day);
+      // Past day: nothing to schedule.
+      if (chosenDay.isBefore(today)) return;
+      // Today, but 09:00 already passed: notify in 1 minute instead.
+      fireAt = now.add(const Duration(minutes: 1));
+    }
+
+    final scheduledDate = tz.TZDateTime.from(fireAt, tz.local);
     final id = event.id.hashCode.abs() & 0x7FFFFFFF;
 
     await _localNotifications.zonedSchedule(
       id,
       event.title,
-      event.title,
+      isEl
+          ? 'Υπενθύμιση υγείας για το κατοικίδιό σου'
+          : 'Health reminder for your pet',
       scheduledDate,
       const NotificationDetails(
         android: AndroidNotificationDetails(

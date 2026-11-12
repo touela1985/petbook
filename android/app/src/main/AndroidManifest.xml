@@ -40,6 +40,11 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
+        <!-- flutter_local_notifications: shows scheduled notifications at their time -->
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+
         <!-- flutter_local_notifications: reschedule alarms after device reboot -->
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
