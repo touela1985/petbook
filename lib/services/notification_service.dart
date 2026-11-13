@@ -216,6 +216,42 @@ class NotificationService {
 
   // ─── Health reminder scheduling ───────────────────────────────────────────
 
+  /// Display name of a health event type, used as the title when the user
+  /// leaves the name field empty.
+  static String healthTypeLabel(String type, bool isEl) {
+    switch (type) {
+      case 'vaccine':
+        return isEl ? 'Εμβόλιο' : 'Vaccine';
+      case 'medication':
+        return isEl ? 'Αγωγή' : 'Medication';
+      case 'vet_visit':
+        return isEl ? 'Κτηνίατρος' : 'Vet Visit';
+      case 'weight':
+        return isEl ? 'Βάρος' : 'Weight';
+      case 'reminder':
+        return isEl ? 'Υπενθύμιση' : 'Reminder';
+      case 'allergy':
+        return isEl ? 'Αλλεργία' : 'Allergy';
+      case 'surgery':
+        return isEl ? 'Χειρουργείο' : 'Surgery';
+      case 'treatment':
+        return isEl ? 'Θεραπεία' : 'Treatment';
+      case 'note':
+        return isEl ? 'Σημείωση' : 'Note';
+      default:
+        return isEl ? 'Καταχώρηση υγείας' : 'Health Event';
+    }
+  }
+
+  /// True when [title] is the automatic type name (in either language),
+  /// i.e. the user left the name field empty.
+  static bool isAutoHealthTitle(String type, String title) {
+    final t = title.trim();
+    return t.isEmpty ||
+        t == healthTypeLabel(type, true) ||
+        t == healthTypeLabel(type, false);
+  }
+
   Future<void> scheduleHealthReminder(
     PetHealthEvent event, {
     bool isEl = false,
@@ -244,9 +280,15 @@ class NotificationService {
     final scheduledDate = tz.TZDateTime.from(fireAt, tz.local);
     final id = event.id.hashCode.abs() & 0x7FFFFFFF;
 
+    // Auto title (name left empty) → "Reminder: Vaccine"; custom name as-is.
+    final notificationTitle = isAutoHealthTitle(event.type, event.title)
+        ? '${isEl ? 'Υπενθύμιση' : 'Reminder'}: '
+            '${healthTypeLabel(event.type, isEl)}'
+        : event.title;
+
     await _localNotifications.zonedSchedule(
       id,
-      event.title,
+      notificationTitle,
       isEl
           ? 'Υπενθύμιση υγείας για το κατοικίδιό σου'
           : 'Health reminder for your pet',

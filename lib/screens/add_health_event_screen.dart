@@ -71,28 +71,31 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
 
     switch (event.type) {
       case 'vaccine':
-        _nameController.text = event.title;
+        _nameController.text = _nameFromTitle(event);
         _notesController.text = event.notes;
         break;
 
       case 'medication':
-        _nameController.text = event.title;
+        _nameController.text = _nameFromTitle(event);
+        // Dosage and frequency are optional, so a missing label means empty.
         _secondaryController.text = _extractLabeledValue(
           event.value,
-          _isEl ? 'Δοσολογία:' : 'Dosage:',
+          const ['Δοσολογία:', 'Dosage:'],
+          wholeIfMissing: false,
         );
         _tertiaryController.text = _extractLabeledValue(
           event.value,
-          _isEl ? 'Συχνότητα:' : 'Frequency:',
+          const ['Συχνότητα:', 'Frequency:'],
+          wholeIfMissing: false,
         );
         _notesController.text = event.notes;
         break;
 
       case 'vet_visit':
-        _nameController.text = event.title;
+        _nameController.text = _nameFromTitle(event);
         _secondaryController.text = _extractLabeledValue(
           event.value,
-          _isEl ? 'Κτηνίατρος/Κλινική:' : 'Vet/Clinic:',
+          const ['Κτηνίατρος/Κλινική:', 'Vet/Clinic:'],
         );
         _notesController.text = event.notes;
         break;
@@ -105,44 +108,44 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
         break;
 
       case 'reminder':
-        _nameController.text = event.title;
+        _nameController.text = _nameFromTitle(event);
         _notesController.text = event.notes;
         break;
 
       case 'allergy':
-        _nameController.text = event.title;
+        _nameController.text = _nameFromTitle(event);
         _secondaryController.text = _extractLabeledValue(
           event.value,
-          _isEl ? 'Αντίδραση:' : 'Reaction:',
+          const ['Αντίδραση:', 'Reaction:'],
         );
         _notesController.text = event.notes;
         break;
 
       case 'surgery':
-        _nameController.text = event.title;
+        _nameController.text = _nameFromTitle(event);
         _secondaryController.text = _extractLabeledValue(
           event.value,
-          _isEl ? 'Κλινική/Κτηνίατρος:' : 'Clinic/Vet:',
+          const ['Κλινική/Κτηνίατρος:', 'Clinic/Vet:'],
         );
         _notesController.text = event.notes;
         break;
 
       case 'treatment':
-        _nameController.text = event.title;
+        _nameController.text = _nameFromTitle(event);
         _secondaryController.text = _extractLabeledValue(
           event.value,
-          _isEl ? 'Οδηγίες:' : 'Instructions:',
+          const ['Οδηγίες:', 'Instructions:'],
         );
         _notesController.text = event.notes;
         break;
 
       case 'note':
-        _nameController.text = event.title;
+        _nameController.text = _nameFromTitle(event);
         _notesController.text = event.notes;
         break;
 
       default:
-        _nameController.text = event.title;
+        _nameController.text = _nameFromTitle(event);
         _secondaryController.text = event.value ?? '';
         _notesController.text = event.notes;
         break;
@@ -154,15 +157,40 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
     }
   }
 
-  String _extractLabeledValue(String? value, String label) {
+  /// Name field content for an existing event: empty when the stored title is
+  /// just the automatic type name.
+  String _nameFromTitle(PetHealthEvent event) {
+    return NotificationService.isAutoHealthTitle(event.type, event.title)
+        ? ''
+        : event.title;
+  }
+
+  /// The typed name, or the type name when the field is left empty.
+  String _nameOrTypeLabel(bool isEl) {
+    final name = _nameController.text.trim();
+    return name.isEmpty
+        ? NotificationService.healthTypeLabel(_selectedType, isEl)
+        : name;
+  }
+
+  /// Finds the line starting with any of [labels] (Greek and English, so no
+  /// locale lookup is needed — this runs from initState) and returns its value.
+  String _extractLabeledValue(
+    String? value,
+    List<String> labels, {
+    bool wholeIfMissing = true,
+  }) {
     if (value == null || value.trim().isEmpty) return '';
     final lines = value.split('\n');
     for (final line in lines) {
-      if (line.trim().startsWith(label)) {
-        return line.replaceFirst(label, '').trim();
+      final trimmed = line.trim();
+      for (final label in labels) {
+        if (trimmed.startsWith(label)) {
+          return trimmed.substring(label.length).trim();
+        }
       }
     }
-    return value;
+    return wholeIfMissing ? value : '';
   }
 
   String _extractWeightNumber(String value) {
@@ -259,48 +287,27 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
 
     switch (_selectedType) {
       case 'vaccine':
-        final vaccineName = _nameController.text.trim();
-        if (vaccineName.isEmpty) {
-          _showMessage(isEl ? 'Συμπλήρωσε το όνομα εμβολίου' : 'Please enter vaccine name');
-          return;
-        }
-        title = vaccineName;
+        title = _nameOrTypeLabel(isEl);
         value = null;
         break;
 
       case 'medication':
-        final medicationName = _nameController.text.trim();
         final dosage = _secondaryController.text.trim();
         final frequency = _tertiaryController.text.trim();
 
-        if (medicationName.isEmpty) {
-          _showMessage(isEl ? 'Συμπλήρωσε το όνομα αγωγής' : 'Please enter medication name');
-          return;
-        }
-        if (dosage.isEmpty) {
-          _showMessage(isEl ? 'Συμπλήρωσε τη δοσολογία' : 'Please enter dosage');
-          return;
-        }
-        if (frequency.isEmpty) {
-          _showMessage(isEl ? 'Συμπλήρωσε τη συχνότητα' : 'Please enter frequency');
-          return;
-        }
-
-        title = medicationName;
-        value = '${isEl ? 'Δοσολογία:' : 'Dosage:'} $dosage\n'
-            '${isEl ? 'Συχνότητα:' : 'Frequency:'} $frequency';
+        title = _nameOrTypeLabel(isEl);
+        final medLines = [
+          if (dosage.isNotEmpty) '${isEl ? 'Δοσολογία:' : 'Dosage:'} $dosage',
+          if (frequency.isNotEmpty)
+            '${isEl ? 'Συχνότητα:' : 'Frequency:'} $frequency',
+        ];
+        value = medLines.isEmpty ? null : medLines.join('\n');
         break;
 
       case 'vet_visit':
-        final visitReason = _nameController.text.trim();
         final clinicName = _secondaryController.text.trim();
 
-        if (visitReason.isEmpty) {
-          _showMessage(isEl ? 'Συμπλήρωσε τον λόγο επίσκεψης' : 'Please enter visit reason');
-          return;
-        }
-
-        title = visitReason;
+        title = _nameOrTypeLabel(isEl);
         value = clinicName.isEmpty
             ? null
             : '${isEl ? 'Κτηνίατρος/Κλινική:' : 'Vet/Clinic:'} $clinicName';
@@ -325,77 +332,44 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
         break;
 
       case 'reminder':
-        final reminderTitle = _nameController.text.trim();
-        if (reminderTitle.isEmpty) {
-          _showMessage(isEl ? 'Συμπλήρωσε τον τίτλο υπενθύμισης' : 'Please enter reminder title');
-          return;
-        }
-        title = reminderTitle;
+        title = _nameOrTypeLabel(isEl);
         value = null;
         break;
 
       case 'allergy':
-        final allergyName = _nameController.text.trim();
         final reaction = _secondaryController.text.trim();
 
-        if (allergyName.isEmpty) {
-          _showMessage(isEl ? 'Συμπλήρωσε το όνομα αλλεργίας' : 'Please enter allergy name');
-          return;
-        }
-
-        title = allergyName;
+        title = _nameOrTypeLabel(isEl);
         value = reaction.isEmpty
             ? null
             : '${isEl ? 'Αντίδραση:' : 'Reaction:'} $reaction';
         break;
 
       case 'surgery':
-        final surgeryTitle = _nameController.text.trim();
         final clinicVet = _secondaryController.text.trim();
 
-        if (surgeryTitle.isEmpty) {
-          _showMessage(isEl ? 'Συμπλήρωσε τον τίτλο χειρουργείου' : 'Please enter surgery title');
-          return;
-        }
-
-        title = surgeryTitle;
+        title = _nameOrTypeLabel(isEl);
         value = clinicVet.isEmpty
             ? null
             : '${isEl ? 'Κλινική/Κτηνίατρος:' : 'Clinic/Vet:'} $clinicVet';
         break;
 
       case 'treatment':
-        final treatmentName = _nameController.text.trim();
         final instructions = _secondaryController.text.trim();
 
-        if (treatmentName.isEmpty) {
-          _showMessage(isEl ? 'Συμπλήρωσε το όνομα θεραπείας' : 'Please enter treatment name');
-          return;
-        }
-
-        title = treatmentName;
+        title = _nameOrTypeLabel(isEl);
         value = instructions.isEmpty
             ? null
             : '${isEl ? 'Οδηγίες:' : 'Instructions:'} $instructions';
         break;
 
       case 'note':
-        final noteTitle = _nameController.text.trim();
-        if (noteTitle.isEmpty) {
-          _showMessage(isEl ? 'Συμπλήρωσε τον τίτλο σημείωσης' : 'Please enter note title');
-          return;
-        }
-        title = noteTitle;
+        title = _nameOrTypeLabel(isEl);
         value = null;
         break;
 
       default:
-        final genericTitle = _nameController.text.trim();
-        if (genericTitle.isEmpty) {
-          _showMessage(isEl ? 'Συμπλήρωσε έναν τίτλο' : 'Please enter a title');
-          return;
-        }
-        title = genericTitle;
+        title = _nameOrTypeLabel(isEl);
         value = _secondaryController.text.trim().isEmpty
             ? null
             : _secondaryController.text.trim();
@@ -412,6 +386,7 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
     final event = PetHealthEvent(
       id: widget.existingEvent?.id ?? _uuid.v4(),
       petId: widget.petId,
+      userId: widget.existingEvent?.userId,
       type: _selectedType,
       title: title,
       notes: notes,

@@ -82,7 +82,11 @@ class PetHealthRepository {
     final raw = await _loadAllRaw();
     final index = raw.indexWhere((event) => event.id == updatedEvent.id);
     if (index == -1) return;
-    raw[index] = updatedEvent;
+    // Keep the original owner when the caller did not set one.
+    final previous = raw[index];
+    raw[index] = updatedEvent.userId == null
+        ? updatedEvent.copyWith(userId: previous.userId)
+        : updatedEvent;
     await _saveAllRaw(raw);
   }
 
