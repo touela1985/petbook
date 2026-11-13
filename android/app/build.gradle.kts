@@ -64,6 +64,9 @@ android {
             // otherwise falls back to debug signing so flutter run --release still works.
             signingConfig = if (releaseConfig.storeFile != null) releaseConfig
                             else signingConfigs.getByName("debug")
+            // R8 strips generic signatures used by flutter_local_notifications (Gson TypeToken).
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
