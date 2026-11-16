@@ -37,6 +37,9 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
   DateTime _selectedDate = DateTime.now();
   bool _hasReminder = false;
   DateTime? _reminderDate;
+  // True once the reminder date is the user's own choice (picked by hand, or
+  // loaded from an existing event). While false, it follows the event date.
+  bool _reminderDateEdited = false;
   bool _isSaving = false;
 
   bool get _isEditMode => widget.existingEvent != null;
@@ -68,6 +71,7 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
     _selectedDate = event.date;
     _reminderDate = event.reminderDate;
     _hasReminder = event.reminderDate != null;
+    _reminderDateEdited = event.reminderDate != null;
 
     switch (event.type) {
       case 'vaccine':
@@ -154,6 +158,7 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
     if (!_supportsReminder) {
       _hasReminder = false;
       _reminderDate = null;
+      _reminderDateEdited = false;
     }
   }
 
@@ -242,6 +247,10 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
     if (picked != null) {
       setState(() {
         _selectedDate = picked;
+        // An untouched reminder follows the event date.
+        if (_hasReminder && !_reminderDateEdited) {
+          _reminderDate = picked;
+        }
       });
     }
   }
@@ -257,6 +266,7 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
     if (picked != null) {
       setState(() {
         _reminderDate = picked;
+        _reminderDateEdited = true;
       });
     }
   }
@@ -271,6 +281,7 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
       if (!_supportsReminder) {
         _hasReminder = false;
         _reminderDate = null;
+        _reminderDateEdited = false;
       }
     });
   }
@@ -524,8 +535,12 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
         onChanged: (value) {
           setState(() {
             _hasReminder = value;
-            if (!value) {
+            if (value) {
+              // Fill a real value so what is shown is what gets saved.
+              _reminderDate ??= _selectedDate;
+            } else {
               _reminderDate = null;
+              _reminderDateEdited = false;
             }
           });
         },
@@ -843,11 +858,11 @@ class _AddHealthEventScreenState extends State<AddHealthEventScreen> {
                 if (_supportsReminder) ...[
                   const SizedBox(height: 16),
                   _buildReminderToggle(),
-                  if (_hasReminder) ...[
+                  if (_hasReminder && _reminderDate != null) ...[
                     const SizedBox(height: 16),
                     _buildDateField(
                       label: isEl ? 'Ημερομηνία υπενθύμισης' : 'Reminder Date',
-                      value: _reminderDate ?? _selectedDate,
+                      value: _reminderDate!,
                       icon: Icons.notifications_active_rounded,
                       onTap: _pickReminderDate,
                     ),
