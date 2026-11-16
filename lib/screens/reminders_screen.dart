@@ -121,7 +121,41 @@ class _RemindersScreenState extends State<RemindersScreen> {
       appBar: AppBar(
         title: Text(el ? 'Υπενθυμίσεις' : 'Reminders'),
       ),
-      body: _loading
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.battery_alert_outlined,
+                  size: 16,
+                  color: AppTheme.textSecondary,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    el
+                        ? 'Για να έρχονται οι υπενθυμίσεις, μην περιορίζεις την εφαρμογή με εξοικονόμηση μπαταρίας.'
+                        : "To receive reminders, don't restrict this app with battery saver.",
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(child: _buildRemindersBody(el)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRemindersBody(bool el) {
+    return _loading
           ? const Center(child: CircularProgressIndicator())
           : _reminders.isEmpty
               ? Center(
@@ -191,7 +225,6 @@ class _RemindersScreenState extends State<RemindersScreen> {
                       );
                     },
                   ),
-                ),
-    );
+                );
   }
 }
