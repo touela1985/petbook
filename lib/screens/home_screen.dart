@@ -121,6 +121,26 @@ class _HomeScreenState extends State<HomeScreen> {
     return future.first;
   }
 
+  // Bell badge: overdue reminders older than this many days are not counted
+  // (they still appear in the Reminders list).
+  static const int _bellBadgeOverdueDays = 7;
+
+  /// Counts reminders due today or overdue by at most [_bellBadgeOverdueDays]
+  /// days. Computed from dates only; nothing is stored.
+  Future<int> _countDueReminders() async {
+    final events = await _healthRepo.getAllEvents();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return events.where((e) {
+      final d = e.reminderDate;
+      if (d == null) return false;
+      final days =
+          DateTime(d.year, d.month, d.day).difference(today).inDays;
+      return days <= 0 && days >= -_bellBadgeOverdueDays;
+    }).length;
+  }
+
   String _langLabel() {
     final code = widget.currentLocale?.languageCode;
     if (code == null) return 'AUTO';
@@ -258,6 +278,7 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (_) => const RemindersScreen(),
       ),
     );
+    if (mounted) setState(() {});
   }
 
   void _openActiveLostMap() async {
@@ -352,7 +373,17 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             tooltip: isEl ? 'Υπενθυμίσεις' : 'Reminders',
             onPressed: _openReminders,
-            icon: const Icon(Icons.notifications_outlined),
+            icon: FutureBuilder<int>(
+              future: _countDueReminders(),
+              builder: (context, countSnap) {
+                final count = countSnap.data ?? 0;
+                return Badge(
+                  isLabelVisible: count > 0,
+                  label: count > 1 ? Text(count > 9 ? '9+' : '$count') : null,
+                  child: const Icon(Icons.notifications_outlined),
+                );
+              },
+            ),
           ),
           PopupMenuButton<String>(
             tooltip: isEl ? 'Γλώσσα' : 'Language',
