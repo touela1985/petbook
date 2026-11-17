@@ -36,7 +36,15 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   generate: true
   uses-material-design: true
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/filopet_icon_1024.png"
+  adaptive_icon_background: "#1D5F7A"
+  adaptive_icon_foreground: "assets/icon/filopet_adaptive_1024.png"
