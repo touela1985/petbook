@@ -136,7 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Icon(Icons.pets, size: 64, color: AppTheme.primaryTeal),
                 const SizedBox(height: 12),
                 const Text(
-                  'Petbook',
+                  'Filopet',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,

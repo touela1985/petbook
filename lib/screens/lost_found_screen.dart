@@ -1278,7 +1278,7 @@ class _LostReportCard extends StatelessWidget {
 Τοποθεσία: ${report.lastSeenLocation}
 Επικοινωνία: $contact
 
-Κοινοποιήθηκε μέσω Petbook
+Κοινοποιήθηκε μέσω Filopet
 '''
         : '''
 Lost pet alert
@@ -1287,12 +1287,12 @@ Pet: $petName
 Location: ${report.lastSeenLocation}
 Contact: $contact
 
-Shared via Petbook
+Shared via Filopet
 ''';
 
     await Share.share(
       text,
-      subject: isEl ? 'Ειδοποίηση απώλειας – Petbook' : 'Lost pet alert – Petbook',
+      subject: isEl ? 'Ειδοποίηση απώλειας – Filopet' : 'Lost pet alert – Filopet',
     );
   }
 
@@ -1577,7 +1577,7 @@ class _FoundReportCard extends StatelessWidget {
 Ημερομηνία: $formattedDate
 Επικοινωνία: $contact
 
-Κοινοποιήθηκε μέσω Petbook
+Κοινοποιήθηκε μέσω Filopet
 '''
         : '''
 Found pet alert
@@ -1587,12 +1587,12 @@ Location: ${report.locationFound}
 Date: $formattedDate
 Contact: $contact
 
-Shared via Petbook
+Shared via Filopet
 ''';
 
     await Share.share(
       text,
-      subject: isEl ? 'Ευρεθέν ζώο – Petbook' : 'Found pet alert – Petbook',
+      subject: isEl ? 'Ευρεθέν ζώο – Filopet' : 'Found pet alert – Filopet',
     );
   }
 

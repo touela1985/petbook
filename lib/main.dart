@@ -105,7 +105,7 @@ class _PetbookAppState extends State<PetbookApp> {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Petbook',
+      title: 'Filopet',
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,

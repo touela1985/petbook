@@ -28,7 +28,7 @@ class NotificationService {
   final ProfileService _profileService = ProfileService();
 
   static const _channelId = 'petbook_default_channel';
-  static const _channelName = 'Petbook Notifications';
+  static const _channelName = 'Filopet Notifications';
 
   // ─── Notification tap state ──────────────────────────────────────────────
 

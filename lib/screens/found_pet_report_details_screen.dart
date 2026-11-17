@@ -203,7 +203,7 @@ class _FoundPetReportDetailsScreenState
 Ημερομηνία: ${_formatDate(widget.report.foundDate)}
 Επικοινωνία: $contact
 
-Κοινοποιήθηκε μέσω Petbook
+Κοινοποιήθηκε μέσω Filopet
 '''
         : '''
 Found pet alert
@@ -211,12 +211,12 @@ Type: $_displayType
 Location: ${widget.report.locationFound}
 Date: ${_formatDate(widget.report.foundDate)}
 Contact: $contact
-Shared via Petbook
+Shared via Filopet
 ''';
 
     await Share.share(
       text,
-      subject: _isEl ? 'Ευρεθέν ζώο – Petbook' : 'Found pet alert – Petbook',
+      subject: _isEl ? 'Ευρεθέν ζώο – Filopet' : 'Found pet alert – Filopet',
     );
   }
 

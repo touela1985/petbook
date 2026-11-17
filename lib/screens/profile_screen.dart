@@ -635,7 +635,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: AppTheme.textSecondary,
                     ),
                     title: Text(isEl ? 'Πληροφορίες' : 'About'),
-                    subtitle: const Text('Petbook'),
+                    subtitle: const Text('Filopet'),
                   ),
                   const SizedBox(height: 4),
                   ListTile(

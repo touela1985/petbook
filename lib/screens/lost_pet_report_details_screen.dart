@@ -316,7 +316,7 @@ class _LostPetReportDetailsScreenState
 Τοποθεσία: ${_report.lastSeenLocation}
 Ημερομηνία: ${_formatDate(_report.lastSeenDate)}
 Επικοινωνία: $contact
-Κοινοποιήθηκε μέσω Petbook
+Κοινοποιήθηκε μέσω Filopet
 '''
         : '''
 Lost pet alert
@@ -324,12 +324,12 @@ Pet: $_displayPetName
 Location: ${_report.lastSeenLocation}
 Date: ${_formatDate(_report.lastSeenDate)}
 Contact: $contact
-Shared via Petbook
+Shared via Filopet
 ''';
 
     await Share.share(
       text,
-      subject: _isEl ? 'Ειδοποίηση απώλειας – Petbook' : 'Lost pet alert – Petbook',
+      subject: _isEl ? 'Ειδοποίηση απώλειας – Filopet' : 'Lost pet alert – Filopet',
     );
   }
 

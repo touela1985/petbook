@@ -361,7 +361,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: 10),
             const Text(
-              'Petbook',
+              'Filopet',
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.2,

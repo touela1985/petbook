@@ -50,7 +50,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Icon(Icons.pets, size: 80),
             SizedBox(height: 20),
             Text(
-              "Petbook",
+              "Filopet",
               style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
             ),
           ],
